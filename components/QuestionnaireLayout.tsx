@@ -29,24 +29,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 24,
+    paddingBottom: 45,
   },
   header: {
-  marginTop: 100,
-  marginBottom: 16,
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 12,
-},
+    marginTop: 100,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   back: {
     position: 'absolute',
-    top: 44, 
+    top: 44,
     left: 10,
   },
   content: {
     flex: 1,
   },
   footer: {
-    paddingBottom: 100,
+    paddingBottom: 32, // было 100
   },
-  
 });

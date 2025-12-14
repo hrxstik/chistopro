@@ -2,35 +2,41 @@ import { useState } from 'react';
 import {
   Modal,
   Pressable,
+  StyleSheet,
   Text,
-  View
+  View,
 } from 'react-native';
 
 import ArrowDown from '@/assets/icons/arrowdown.svg';
 import { Colors } from '@/constants/colors';
-import { StyleSheet } from 'react-native';
-const TIMEZONES = [
-  'Москва (GMT +3)',
-  'Калининград (GMT +2)',
-  'Самара (GMT +4)',
-  'Екатеринбург (GMT +5)',
-];
 
 type Props = {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  options: string[]; // 👈 ВАЖНО
 };
 
-export function SelectField({ label, value, onChange }: Props) {
+export function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <View style={styles.container}>
         <Text style={styles.label}>{label}</Text>
-        <Pressable style={styles.select} onPress={() => setOpen(true)}>
-          <Text style={styles.value}>{value}</Text>
+
+        <Pressable
+          style={styles.select}
+          onPress={() => setOpen(true)}
+        >
+          <Text style={styles.value}>
+            {value || 'Выберите вариант'}
+          </Text>
           <ArrowDown width={10} />
         </Pressable>
       </View>
@@ -41,16 +47,16 @@ export function SelectField({ label, value, onChange }: Props) {
           onPress={() => setOpen(false)}
         >
           <View style={styles.modal}>
-            {TIMEZONES.map((tz) => (
+            {options.map((item) => (
               <Pressable
-                key={tz}
+                key={item}
                 style={styles.option}
                 onPress={() => {
-                  onChange(tz);
+                  onChange(item);
                   setOpen(false);
                 }}
               >
-                <Text style={styles.optionText}>{tz}</Text>
+                <Text style={styles.optionText}>{item}</Text>
               </Pressable>
             ))}
           </View>
@@ -76,7 +82,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',  
+    alignItems: 'center',
   },
   value: {
     fontSize: 16,

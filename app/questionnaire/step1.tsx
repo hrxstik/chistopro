@@ -11,8 +11,7 @@ import { Image, Text, View } from 'react-native';
 export default function Step1() {
   const router = useRouter();
   const [gender, setGender] = useState<'male' | 'female' | null>(null);
-  const [timezone, setTimezone] = useState('Москва (GMT +3)');
-  const FEMALE_BORDER_COLOR = 'red'
+  const [timezone, setTimezone] = useState('');
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const isValid =
@@ -65,13 +64,20 @@ export default function Step1() {
   label="Женский"
   selected={gender === 'female'}
   onPress={() => setGender('female')}
-  borderColor={FEMALE_BORDER_COLOR}
+  borderColor={Colors.red}
 />
       <SelectField
-        label="Часовой пояс:"
-        value={timezone}
-        onChange={setTimezone}
-      />
+  label="Часовой пояс:"
+  value={timezone}
+  onChange={setTimezone}
+  options={[
+    'Москва (GMT +3)',
+    'Калининград (GMT +2)',
+    'Самара (GMT +4)',
+    'Екатеринбург (GMT +5)',
+  ]}
+/>
+
 
     </QuestionnaireLayout>
   );

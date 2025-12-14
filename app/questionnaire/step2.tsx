@@ -3,10 +3,11 @@ import { OnboardingButton } from '@/components/OnboardingButton';
 import { QuestionnaireLayout } from '@/components/QuestionnaireLayout';
 import { RadioButton } from '@/components/RadioButton';
 import { Colors } from '@/constants/colors';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, Text, View } from 'react-native';
-
 export default function Step2() {
+  const router = useRouter();
   const [profession, setProfession] = useState<string | null>(null);
   return (
     <QuestionnaireLayout
@@ -20,7 +21,7 @@ export default function Step2() {
           <CloudSmall text="Выбери вид твоей профессии" />
         </View>
       }
-      footer={<OnboardingButton title="Продолжить" disabled={!profession} onPress={() => {}} />}
+      footer={<OnboardingButton title="Продолжить" disabled={!profession} onPress={() => router.push('/questionnaire/step3')} />}
     >
       <Text style={{ marginBottom: 6 }}>Ваша профессия:</Text>
 {[
