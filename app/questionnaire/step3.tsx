@@ -72,7 +72,7 @@ const canAddMember =
           />
           <CloudSmall
             text={
-              'Расскажи о своих\nдомочадцах, чтобы\nмы подобрали задачи'
+              'Расскажи о своих\nдомочадцах, чтобы мы \nподобрали задачи для тебя'
             }
           />
         </View>
@@ -81,7 +81,7 @@ const canAddMember =
         <OnboardingButton
           title="Продолжить"
           disabled={!isValid}
-          onPress={() => router.push('/questionnaire/step3')}
+          onPress={() => router.push('/questionnaire/step4')}
         />
       }
     >
