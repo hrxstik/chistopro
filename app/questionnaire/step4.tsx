@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-    Image,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 
 import { Checkbox } from '@/components/Checkbox';
@@ -21,17 +21,28 @@ type Room = {
   name: string;
   count: string;
   checked: boolean;
+  isCustom: boolean;
 };
 
 const DEFAULT_ROOMS: Room[] = [
-  { id: '1', name: 'Спальня', count: '', checked: false },
-  { id: '2', name: 'Кухня', count: '', checked: false },
-  { id: '3', name: 'Ванная', count: '', checked: false },
-  { id: '4', name: 'Кабинет', count: '', checked: false },
-  { id: '5', name: 'Гостиная', count: '', checked: false },
-  { id: '6', name: 'Обеденная', count: '', checked: false },
-  { id: '7', name: 'Подвал', count: '', checked: false },
+  { id: '1', name: 'Спальня',   count: '', checked: false, isCustom: false },
+  { id: '2', name: 'Кухня',     count: '', checked: false, isCustom: false },
+  { id: '3', name: 'Ванная',    count: '', checked: false, isCustom: false },
+  { id: '4', name: 'Кабинет',   count: '', checked: false, isCustom: false },
+  { id: '5', name: 'Гостиная',  count: '', checked: false, isCustom: false },
+  { id: '6', name: 'Обеденная', count: '', checked: false, isCustom: false },
+  { id: '7', name: 'Подвал',    count: '', checked: false, isCustom: false },
 ];
+
+// утилита для числовых полей
+const clampNumeric = (text: string, min?: number, max?: number) => {
+  const digits = text.replace(/\D/g, '');
+  if (digits === '') return '';
+  let num = parseInt(digits, 10);
+  if (min !== undefined && num < min) num = min;
+  if (max !== undefined && num > max) num = max;
+  return String(num);
+};
 
 export default function Step4() {
   const router = useRouter();
@@ -45,16 +56,27 @@ export default function Step4() {
 
   const handleToggleRoom = (id: string) => {
     setRooms((prev) =>
-      prev.map((room) =>
-        room.id === id ? { ...room, checked: !room.checked } : room
-      )
+      prev
+        .map((room) => {
+          if (room.id !== id) return room;
+
+          // если это кастомная комната и мы снимаем галочку — пометим на удаление
+          if (room.isCustom && room.checked) {
+            return { ...room, checked: false, _remove: true } as any;
+          }
+
+          return { ...room, checked: !room.checked };
+        })
+        // удаляем кастомные комнаты, у которых сняли галочку
+        .filter((room: any) => !room._remove)
     );
   };
 
   const handleChangeRoomName = (id: string, name: string) => {
     setRooms((prev) =>
       prev.map((room) =>
-        room.id === id ? { ...room, name } : room
+        // на всякий случай не трогаем предустановленные
+        room.id === id && room.isCustom ? { ...room, name } : room
       )
     );
   };
@@ -62,7 +84,9 @@ export default function Step4() {
   const handleChangeRoomCount = (id: string, count: string) => {
     setRooms((prev) =>
       prev.map((room) =>
-        room.id === id ? { ...room, count } : room
+        room.id === id
+          ? { ...room, count: clampNumeric(count, 1, 10) }
+          : room
       )
     );
   };
@@ -75,21 +99,45 @@ export default function Step4() {
         name: '',
         count: '',
         checked: true,
+        isCustom: true,
       },
     ]);
 
-    // скроллим чуть вниз к добавленной комнате при желании
     requestAnimationFrame(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
     });
   };
 
+  const handleChangeArea = (text: string) => {
+    setArea(clampNumeric(text, 1)); // минимум 1
+  };
+
+  const handleChangePets = (text: string) => {
+    setPetsCount(clampNumeric(text, 0)); // минимум 0
+  };
+
+  // хотя бы одна выбранная комната
   const hasSelectedRoom = rooms.some((r) => r.checked);
+
+  // у всех выбранных комнат есть название
+  const allSelectedHaveName = rooms.every(
+    (r) => !r.checked || r.name.trim() !== ''
+  );
+
+  // у всех выбранных комнат валидное количество 1–10
+  const allSelectedHaveValidCount = rooms.every((r) => {
+    if (!r.checked) return true;
+    if (r.count.trim() === '') return false;
+    const n = parseInt(r.count, 10);
+    return !isNaN(n) && n >= 1 && n <= 10;
+  });
 
   const isValid =
     area.trim() !== '' &&
     petsCount.trim() !== '' &&
-    hasSelectedRoom;
+    hasSelectedRoom &&
+    allSelectedHaveName &&
+    allSelectedHaveValidCount;
 
   return (
     <QuestionnaireLayout
@@ -100,7 +148,7 @@ export default function Step4() {
             source={require('@/assets/images/chubrik1_dirty1.png')}
             style={{ width: 121, height: 181 }}
           />
-          <CloudSmall text={"Расскажите\nнемного о своём доме"} />
+          <CloudSmall text={'Расскажите\nнемного о своём доме'} />
         </View>
       }
       footer={
@@ -108,17 +156,16 @@ export default function Step4() {
           title="Завершить"
           disabled={!isValid}
           onPress={() => {
-            // TODO: сохранить данные и перейти дальше
-            router.push('/questionnaire/step4');
+            router.push('/questionnaire/notifications');
           }}
         />
       }
     >
-      {/* ОДИН ScrollView на всю форму */}
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="on-drag"
       >
         {/* Площадь дома */}
         <Text style={styles.label}>Площадь дома:</Text>
@@ -126,7 +173,7 @@ export default function Step4() {
           <TextInput
             style={styles.areaInput}
             value={area}
-            onChangeText={setArea}
+            onChangeText={handleChangeArea}
             keyboardType="numeric"
           />
           <Text style={styles.areaSuffix}>м²</Text>
@@ -137,7 +184,7 @@ export default function Step4() {
         <TextInput
           style={styles.input}
           value={petsCount}
-          onChangeText={setPetsCount}
+          onChangeText={handleChangePets}
           keyboardType="numeric"
         />
 
@@ -154,14 +201,22 @@ export default function Step4() {
               onToggle={() => handleToggleRoom(room.id)}
             />
 
-            <TextInput
-              style={styles.roomNameInput}
-              value={room.name}
-              onChangeText={(text) =>
-                handleChangeRoomName(room.id, text)
-              }
-              placeholder="Название комнаты"
-            />
+            {room.isCustom ? (
+              // редактируемое поле для кастомных комнат
+              <TextInput
+                style={styles.roomNameInput}
+                value={room.name}
+                onChangeText={(text) =>
+                  handleChangeRoomName(room.id, text)
+                }
+                placeholder="Название комнаты"
+              />
+            ) : (
+              // нередактируемое "поле" для предустановленных
+              <View style={[styles.roomNameInput, styles.roomNameStatic]}>
+                <Text style={styles.roomNameText}>{room.name}</Text>
+              </View>
+            )}
 
             <TextInput
               style={styles.roomCountInput}
@@ -175,10 +230,7 @@ export default function Step4() {
         ))}
 
         {/* Кнопка добавить комнату */}
-        <Pressable
-          onPress={handleAddRoom}
-          style={styles.addButton}
-        >
+        <Pressable onPress={handleAddRoom} style={styles.addButton}>
           <Text style={styles.addButtonText}>+</Text>
         </Pressable>
       </ScrollView>
@@ -189,6 +241,7 @@ export default function Step4() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
+    flexGrow: 1,
   },
   label: {
     fontSize: 14,
@@ -224,7 +277,7 @@ const styles = StyleSheet.create({
   areaSuffix: {
     marginLeft: 8,
     fontSize: 16,
-    color: Colors.primary, // тот же голубой
+    color: Colors.primary,
   },
 
   /* Комнаты */
@@ -250,6 +303,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     fontSize: 14,
   },
+  // внешний вид "замороженного" поля для предустановленных комнат
+  roomNameStatic: {
+    justifyContent: 'center',
+  },
+  roomNameText: {
+    fontSize: 14,
+  },
   roomCountInput: {
     width: 64,
     height: 40,
@@ -259,6 +319,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     fontSize: 14,
     marginLeft: 8,
+    textAlign: 'center',
   },
 
   addButton: {

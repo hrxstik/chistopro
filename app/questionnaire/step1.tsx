@@ -51,7 +51,10 @@ export default function Step1() {
   value={age}
   onChangeText={setAge}
   keyboardType="numeric"
+  min={0}
+  max={100}
 />
+
       <Text style={{ marginBottom: 6 }}>Пол:</Text>
 <RadioButton
   label="Мужской"

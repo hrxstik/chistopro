@@ -1,5 +1,6 @@
 import MinusIcon from '@/assets/icons/minus.svg';
 import PenIcon from '@/assets/icons/pen.svg';
+import { InputField } from '@/components/InputField';
 import { RadioButton } from '@/components/RadioButton';
 import { SelectField } from '@/components/SelectField';
 import { Colors } from '@/constants/colors';
@@ -8,7 +9,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
@@ -30,14 +30,14 @@ export function HouseholdCard({
       {/* HEADER */}
       {member.expanded ? (
         <View style={styles.nameContainer}>
-          <Text style={styles.nameLabel}>Имя домочадца:</Text>
-
           <View style={styles.nameRow}>
-            <TextInput
-              style={styles.nameInput}
-              value={member.name}
-              onChangeText={(name) => onChange({ name })}
-            />
+            <View style={{ flex: 1 }}>
+              <InputField
+                label="Имя домочадца:"
+                value={member.name}
+                onChangeText={(name) => onChange({ name })}
+              />
+            </View>
 
             <Pressable onPress={onDelete} style={styles.iconBtn}>
               <MinusIcon width={20} height={20} />
@@ -66,12 +66,13 @@ export function HouseholdCard({
       {member.expanded && (
         <View style={styles.content}>
           {/* Возраст */}
-          <Text style={[styles.label, styles.firstLabel]}>Возраст:</Text>
-          <TextInput
-            style={styles.input}
+          <InputField
+            label="Возраст:"
             value={member.age}
-            onChangeText={(age) => onChange({ age })}
+            onChangeText={(text) => onChange({ age: text })}
             keyboardType="numeric"
+            min={0}
+            max={100}
           />
 
           {/* Пол */}
@@ -119,25 +120,11 @@ const styles = StyleSheet.create({
   /* header-expanded */
 
   nameContainer: {
-    // раньше здесь было marginBottom: 16 — убрали,
-    // чтобы отступ регулировался только через первый label
-  },
-  nameLabel: {
-    fontSize: 14,
-    marginBottom: 6,
+    // отступы вниз задаёт сам InputField
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  nameInput: {
-    flex: 1,
-    height: 44,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 16,
   },
   iconBtn: {
     marginLeft: 12,
@@ -149,7 +136,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8, // чуть меньше, чтобы не создавать лишнюю дырку
+    marginBottom: 0,
   },
   title: {
     fontSize: 16,
@@ -163,26 +150,14 @@ const styles = StyleSheet.create({
   /* content */
 
   content: {
-    marginTop: 8, // небольшой зазор после имени
-  },
-
-  // первый label (Возраст) — без extra-top
-  firstLabel: {
-    marginTop: 0,
+    marginTop: 0, // небольшой зазор после имени
   },
 
   label: {
     fontSize: 14,
     marginBottom: 6,
-    marginTop: 12, // одинаковый отступ между блоками: [поле] -> label
-  },
-
-  input: {
-    height: 44,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 16,
+    marginTop: 0, // как в step1: между InputField(Возраст) и "Пол"
   },
 });
+
+export default HouseholdCard;

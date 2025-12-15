@@ -4,4 +4,5 @@ export const Colors = {
   text: '#000000',
   primary: '#74C5F1',
   red: '#FF8484',
+  disabled: '#D9D9D9',
 };

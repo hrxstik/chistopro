@@ -7,11 +7,11 @@ import { HouseholdMember } from '@/types/household';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-    Image,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from 'react-native';
 
 export default function Step3() {
