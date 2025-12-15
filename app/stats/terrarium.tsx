@@ -58,6 +58,7 @@ export default function TerrariumScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListFooterComponent={() => <View style={styles.separator} />}
         renderItem={({ item }) => (
           <ChubrikTerrariumItem
             name={item.name}
@@ -67,7 +68,10 @@ export default function TerrariumScreen() {
         )}
         showsVerticalScrollIndicator={false}
       />
+      
+
     </View>
+    
   );
 }
 

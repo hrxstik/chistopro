@@ -20,7 +20,7 @@ export function ChubrikTerrariumItem({ name, acquired, cleaned }: Props) {
   const icon = cleaned ? (
     <Image source={cleanChubrik} style={styles.cleanImage} />
   ) : (
-    <HiddenIcon width={60} height={90} />
+    <HiddenIcon width={100} height={90} />
   );
 
   return (
@@ -51,8 +51,8 @@ const styles = StyleSheet.create({
   },
 
   cleanImage: {
-    width: 60,
-    height: 90,
+    width: 100,
+    height: 100,
     resizeMode: 'contain',
   },
 
