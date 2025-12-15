@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
 import {
-    Image,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 import { OnboardingCloud } from '@/components/OnboardingCloud';
@@ -15,11 +15,11 @@ export default function NotificationsScreen() {
   const router = useRouter();
 
   const handleAllow = () => {
-    router.push('/questionnaire/notifications');
+    router.push('/tabs');
   };
 
   const handleDeny = () => {
-    router.push('/questionnaire/notifications');
+    router.push('/tabs');
   };
 
   return (
