@@ -52,7 +52,7 @@ const DEFAULT_ROOMS: Room[] = [
   { id: '8', name: 'Тренажёрный зал', count: '1', checked: true, isCustom: true },
 ];
 
-// чуть-чуть демо для домочадцев
+// демо-домочадцы
 const DEFAULT_MEMBERS: HouseholdMember[] = [
   {
     id: 'h1',
@@ -209,6 +209,20 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleAddMember = () => {
+    setMembers((prev) => [
+      ...prev,
+      {
+        id: createId(),
+        name: '',
+        age: '',
+        gender: 'female',
+        profession: '',
+        expanded: true,
+      } as HouseholdMember,
+    ]);
+  };
+
   const SelectedAvatar = AVATAR_COMPONENTS[selectedAvatarIndex];
 
   return (
@@ -221,7 +235,7 @@ export default function SettingsScreen() {
           <View style={{ width: 32 }} />
         </View>
       </View>
-
+      <View style={styles.topDivider} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -229,7 +243,7 @@ export default function SettingsScreen() {
       >
         {/* Аватар и выбор иконки */}
         <View style={styles.avatarBlock}>
-          <View >
+          <View style={styles.avatarCircle}>
             <SelectedAvatar width={100} height={100} />
           </View>
 
@@ -423,6 +437,11 @@ export default function SettingsScreen() {
                   onToggle={() => toggleMember(member.id)}
                 />
               ))}
+
+              {/* + всегда доступен при развёрнутом блоке */}
+              <Pressable onPress={handleAddMember} style={styles.addRoomButton}>
+                <Text style={styles.addRoomPlus}>+</Text>
+              </Pressable>
             </View>
           )}
         </View>
@@ -434,7 +453,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.background, // бледно-голубой фон всего окна
   },
   header: {
     paddingTop: 40,
@@ -524,7 +543,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sectionBody: {
-    paddingHorizontal: 0,
+    paddingHorizontal: 12, // единая "рамка" для всех полей внутри секции
     paddingVertical: 8,
     marginTop: 4,
   },
@@ -533,7 +552,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 6,
     marginTop: 8,
-    paddingHorizontal: 12,
   },
 
   /* Площадь дома */
@@ -547,7 +565,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    marginHorizontal: 12,
+    backgroundColor: '#ffffff', // белый фон как у остальных инпутов
   },
   areaInput: {
     flex: 1,
@@ -568,13 +586,11 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginTop: 8,
     marginBottom: 4,
-    paddingHorizontal: 12,
   },
   roomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
-    paddingHorizontal: 12,
   },
   roomNameInput: {
     flex: 1,
@@ -584,7 +600,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 8,
     fontSize: 14,
-    backgroundColor: '#FFFFFF', // и предопределённые, и кастомные — белые
+    backgroundColor: '#FFFFFF',
   },
   roomCountInput: {
     width: 64,
@@ -607,7 +623,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
-    marginLeft: 12,
+    backgroundColor: '#ffffff',
   },
   addRoomPlus: {
     fontSize: 24,
