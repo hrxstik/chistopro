@@ -1,16 +1,16 @@
-// components/TaskTimeInfo.tsx
 import { Colors } from '@/constants/colors';
 import { StyleSheet, Text, View } from 'react-native';
 
 type Props = {
-  minutes: number;
+  text: string;          // любая строка: "4 мин", "03.12.25" и т.п.
+  color?: string;        // цвет текста и вертикальной палочки
 };
 
-export function TaskTimeInfo({ minutes }: Props) {
+export function TaskTimeInfo({ text, color = Colors.primary }: Props) {
   return (
     <View style={styles.container}>
-      <View style={styles.divider} />
-      <Text style={styles.text}>{minutes} мин</Text>
+      <View style={[styles.divider, { backgroundColor: color }]} />
+      <Text style={[styles.text, { color }]}>{text}</Text>
     </View>
   );
 }
@@ -19,18 +19,16 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'stretch', // чтобы divider мог растянуться по высоте строки
+    alignSelf: 'stretch',
     marginLeft: 8,
   },
   divider: {
     width: 1.5,
-    backgroundColor: Colors.primary,
-    alignSelf: 'stretch', // от верха до низа родителя
+    alignSelf: 'stretch',
     marginRight: 6,
   },
   text: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.primary,
   },
 });

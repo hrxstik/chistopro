@@ -1,5 +1,6 @@
 import { AdBanner } from '@/components/AdBanner';
 import { Colors } from '@/constants/colors';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
   Image,
@@ -9,7 +10,6 @@ import {
   Text,
   View,
 } from 'react-native';
-
 // аватар
 import ProfileIcon from '@/assets/icons/profile1.svg';
 
@@ -33,12 +33,13 @@ type StatCardProps = {
   icon: React.ReactNode;
   value: number;
   label: string;
+  onPress?: () => void;
 };
 
-function StatCard({ icon, value, label }: StatCardProps) {
+function StatCard({ icon, value, label, onPress }: StatCardProps) {
   return (
     <Pressable
-      onPress={() => alert('Раздел в разработке')}
+      onPress={onPress}
       style={({ pressed }) => [
         styles.statCard,
         pressed && styles.statCardPressed,
@@ -55,6 +56,7 @@ function StatCard({ icon, value, label }: StatCardProps) {
 }
 
 export default function ProfileScreen() {
+  const router = useRouter();
   return (
     <View style={styles.container}>
       <AdBanner/>
@@ -65,9 +67,7 @@ export default function ProfileScreen() {
       >
         {/* аватар и имя */}
         <View style={styles.headerBlock}>
-          <View style={styles.avatarCircle}>
-            <ProfileIcon width={72} height={72} />
-          </View>
+            <ProfileIcon width={122}/>
           <Text style={styles.userName}>{USER_NAME}</Text>
         </View>
 
@@ -77,12 +77,15 @@ export default function ProfileScreen() {
             icon={<GreenTick width={38} height={38} />}
             value={TASKS_DONE}
             label={'выполнено\nзадач'}
+            onPress={() => router.push('/stats/tasks')}
           />
           <StatCard
             icon={<MainIcon width={38} height={38} />}
             value={CHECKLIST_RECORD}
             label={'рекорда закрытых\nчек-листов'}
+            onPress={() => router.push('/stats/checklists')}
           />
+          
           <StatCard
             icon={<CupIcon width={38} height={38} />}
             value={ACHIEVEMENTS}
@@ -125,17 +128,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  avatarCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#ffffff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    marginBottom: 12,
-  },
+
   userName: {
     fontSize: 18,
     fontWeight: '700',

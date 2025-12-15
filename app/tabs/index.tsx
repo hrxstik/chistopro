@@ -17,7 +17,7 @@ import { Colors } from '@/constants/colors';
 type Task = {
   id: string;
   title: string;
-  minutes: number;
+  time: string;
   completed: boolean;
 };
 
@@ -28,25 +28,25 @@ const INITIAL_TASKS: Task[] = [
   {
     id: '1',
     title: 'Почистить раковину в ванной',
-    minutes: 4,
+    time: '4 мин',
     completed: false,
   },
   {
     id: '2',
     title: 'Протереть дверные ручки и выключатели',
-    minutes: 3,
+    time: '3 мин',
     completed: false,
   },
   {
     id: '3',
     title: 'Помыть пол в гостиной',
-    minutes: 7,
+    time: '7 мин',
     completed: false,
   },
   {
     id: '4',
     title: 'Протереть стол на кухне',
-    minutes: 2,
+    time: '2 мин',
     completed: false,
   },
 ];
@@ -92,7 +92,6 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* верхняя голубая линия */}
-      <View style={styles.topDivider} />
 
       <FlatList
         data={tasks}
@@ -170,7 +169,7 @@ export default function HomeScreen() {
               </Text>
             </View>
 
-            <TaskTimeInfo minutes={item.minutes} />
+            <TaskTimeInfo text={item.time} />
           </View>
         )}
         contentContainerStyle={styles.listContent}
@@ -306,6 +305,7 @@ const styles = StyleSheet.create({
   },
   taskTitleCompleted: {
     textDecorationLine: 'line-through',
-    color: '#9BA4AF',
+    color: Colors.primary,
   },
+
 });
