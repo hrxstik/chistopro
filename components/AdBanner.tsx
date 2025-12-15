@@ -19,7 +19,7 @@ export function AdBanner({ text = 'Реклама' }: Props) {
 const styles = StyleSheet.create({
   wrapper: {
     width: '100%',
-    marginTop: 24,          // реклама ещё пониже от верхней линии
+    marginTop: 30,          // реклама ещё пониже от верхней линии
     marginBottom: 16,
   },
   banner: {

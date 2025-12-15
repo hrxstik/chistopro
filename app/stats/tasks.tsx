@@ -100,8 +100,9 @@ export default function ReceivedTasksScreen() {
           <Text style={styles.headerTitle}>Полученные задачи</Text>
           <View style={{ width: 32 }} />
         </View>
+       
       </View>
-
+ <View style={styles.topDivider} />
       {/* счётчики */}
       <View style={styles.summary}>
         <Text style={styles.summaryText}>
@@ -172,6 +173,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
+  },
+  topDivider: {
+    height: 2,
+    backgroundColor: Colors.primary,
+    width: '100%',
   },
 
   summary: {

@@ -1,3 +1,4 @@
+import ProfileIcon from '@/assets/icons/profiles/profile1.svg';
 import { AdBanner } from '@/components/AdBanner';
 import { Colors } from '@/constants/colors';
 import { useRouter } from 'expo-router';
@@ -10,19 +11,14 @@ import {
   Text,
   View,
 } from 'react-native';
-// аватар
-import ProfileIcon from '@/assets/icons/profile1.svg';
 
-// иконки для статистики
 import ChubrikHiddenIcon from '@/assets/icons/chubrik_hidden.svg';
 import CupIcon from '@/assets/icons/cup.svg';
 import GreenTick from '@/assets/icons/greentick.svg';
-import MainIcon from '@/assets/icons/main.svg'; // 31x38 по макету
+import MainIcon from '@/assets/icons/main.svg';
 
-// картинка облака Premium
 const premiumCloud = require('@/assets/images/premium.png');
 
-// пока захардкоженные данные (потом заменишь на реальные)
 const USER_NAME = 'Ирина';
 const TASKS_DONE = 60;
 const CHECKLIST_RECORD = 15;
@@ -90,11 +86,13 @@ export default function ProfileScreen() {
             icon={<CupIcon width={38} height={38} />}
             value={ACHIEVEMENTS}
             label={'достижений\nполучено'}
+            onPress={() => router.push('/stats/achievements')}
           />
           <StatCard
             icon={<ChubrikHiddenIcon width={38} height={38} />}
             value={CHUBRIKS}
-            label={'чубриков\nполучено'}
+            label={'чубриков\nочищено'}
+            onPress={() => router.push('/stats/terrarium')}
           />
         </View>
 

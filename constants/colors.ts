@@ -5,4 +5,5 @@ export const Colors = {
   primary: '#74C5F1',
   red: '#FF8484',
   disabled: '#D9D9D9',
+  white: '#FFFFFF',
 };

@@ -22,7 +22,7 @@ type Task = {
 };
 
 const TOTAL_DAYS = 28;
-const COMPLETED_DAYS = 15; // меняешь это число — меняется уровень/прогресс
+const COMPLETED_DAYS = 15;
 
 const INITIAL_TASKS: Task[] = [
   {
@@ -92,6 +92,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* верхняя голубая линия */}
+<AdBanner />
 
       <FlatList
         data={tasks}
@@ -99,8 +100,7 @@ export default function HomeScreen() {
         ListHeaderComponent={
           <>
             {/* Реклама чуть ниже синей линии */}
-            <AdBanner />
-
+            
             <View style={styles.headerBlock}>
               <Text style={styles.mascotTitle}>Чубрик обыкновенный</Text>
               <Text style={styles.levelText}>{level} уровень</Text>
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   taskTitleCompleted: {
     textDecorationLine: 'line-through',
-    color: Colors.primary,
+    color: Colors.primary, 
   },
 
 });

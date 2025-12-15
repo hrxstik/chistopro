@@ -59,7 +59,7 @@ export default function ChecklistDetailsScreen() {
           <View style={{ width: 32 }} />
         </View>
       </View>
-
+<View style={styles.topDivider} />
       <FlatList
         data={DEMO_TASKS}
         keyExtractor={(item) => item.id}
@@ -123,7 +123,11 @@ const styles = StyleSheet.create({
   headerTitleBold: {
     fontWeight: '700',
   },
-
+  topDivider: {
+    height: 2,
+    backgroundColor: Colors.primary,
+    width: '100%',
+  },
   listContent: {
     paddingHorizontal: 24,
     paddingTop: 24,
