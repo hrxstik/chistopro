@@ -59,6 +59,8 @@ export default function Step3() {
             style={{ width: 121, height: 181 }}
           />
           <CloudSmall
+            width={220}
+            height={130}
             text={'Расскажи о своих\nдомочадцах, чтобы мы \nподобрали задачи для тебя'}
           />
         </View>

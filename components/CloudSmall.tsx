@@ -3,14 +3,16 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 
 type Props = {
   text: string;
+  width?: number;
+  height?: number;
 };
 
-export function CloudSmall({ text }: Props) {
+export function CloudSmall({ text, width = 177, height = 115 }: Props) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { width, height }]}>
       <Image
         source={require('@/assets/images/cloud_S.png')}
-        style={styles.cloud}
+        style={[styles.cloud, { width, height }]}
       />
       <Text style={styles.text}>{text}</Text>
     </View>
@@ -19,16 +21,11 @@ export function CloudSmall({ text }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    width: 177,
-    height: 115,
     marginBottom: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cloud: {
-    width: 177,
-    height: 115,
-
     resizeMode: 'contain',
   },
   text: {

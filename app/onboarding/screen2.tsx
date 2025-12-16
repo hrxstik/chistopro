@@ -3,8 +3,7 @@ import { useRouter } from 'expo-router';
 import { OnboardingButton } from '@/components/OnboardingButton';
 import { OnboardingCloud } from '@/components/OnboardingCloud';
 import { OnboardingLayout } from '@/components/OnboardingLayout';
-import { OnboardingMascot } from '@/components/OnboardingMascot';
-
+import { Image, StyleSheet } from 'react-native';
 export default function Screen2() {
   const router = useRouter();
 
@@ -15,7 +14,12 @@ export default function Screen2() {
           text={'Привет, я Чубрик!\nДавай вместе убираться дома!'}
         />
       }
-      center={<OnboardingMascot variant="dirty" />}
+      center={
+        <Image
+          source={require('@/assets/images/chubrik1_dirty1.png')}
+          style={styles.image}
+        />
+      }
       bottom={
         <OnboardingButton
           title="Продолжить"
@@ -25,3 +29,10 @@ export default function Screen2() {
     />
   );
 }
+
+const styles = StyleSheet.create({
+  image: {
+    width: '75%',
+    resizeMode: 'contain',
+  },
+});

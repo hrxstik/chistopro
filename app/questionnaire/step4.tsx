@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: Colors.white,
     fontSize: 16,
-    marginBottom: 16,
+
   },
 
   /* Площадь дома с "м²" внутри поля */
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
     backgroundColor: Colors.white,
   },
   areaInput: {
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginBottom: 8,
+    marginBottom: 2,
     marginTop: 8,
   },
   roomRow: {

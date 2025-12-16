@@ -1,9 +1,8 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text } from 'react-native';
+import { Image, StyleSheet, Text } from 'react-native';
 
 import { OnboardingButton } from '@/components/OnboardingButton';
 import { OnboardingLayout } from '@/components/OnboardingLayout';
-import { OnboardingMascot } from '@/components/OnboardingMascot';
 import { Colors } from '@/constants/colors';
 
 export default function Screen1() {
@@ -16,7 +15,12 @@ export default function Screen1() {
           Дом в порядке — жизнь в достатке!
         </Text>
       }
-      center={<OnboardingMascot variant="clean" />}
+      center={
+        <Image
+          source={require('@/assets/images/chubrik1_clean.png')}
+          style={styles.image}
+        />
+      }
       bottom={
         <OnboardingButton
           title="Начать"
@@ -33,5 +37,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text,
     textAlign: 'center',
+  },
+  image: {
+    width: '75%',
+    resizeMode: 'contain',
   },
 });

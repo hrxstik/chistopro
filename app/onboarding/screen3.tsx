@@ -1,9 +1,8 @@
-import { useRouter } from 'expo-router';
-
 import { OnboardingButton } from '@/components/OnboardingButton';
 import { OnboardingCloud } from '@/components/OnboardingCloud';
 import { OnboardingLayout } from '@/components/OnboardingLayout';
-import { OnboardingMascot } from '@/components/OnboardingMascot';
+import { useRouter } from 'expo-router';
+import { Image, StyleSheet } from 'react-native';
 
 export default function Screen2() {
   const router = useRouter();
@@ -12,10 +11,15 @@ export default function Screen2() {
     <OnboardingLayout
       top={
         <OnboardingCloud
-          text={'Заполни небольшую анкету\nи мы приступим к уборке!'}
+          text={'Заполни небольшую\nанкету и мы\nприступим к уборке!'}
         />
       }
-      center={<OnboardingMascot variant="dirty" />}
+      center={
+              <Image
+                source={require('@/assets/images/chubrik1_dirty1.png')}
+                style={styles.image}
+              />
+            }
       bottom={
         <OnboardingButton
           title="Продолжить"
@@ -25,3 +29,9 @@ export default function Screen2() {
     />
   );
 }
+const styles = StyleSheet.create({
+  image: {
+    width: '75%',
+    resizeMode: 'contain',
+  },
+});
