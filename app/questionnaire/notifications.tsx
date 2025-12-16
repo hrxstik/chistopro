@@ -94,7 +94,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   questionText: {
-    fontSize: 16,
+    fontSize: 20,
+    fontFamily: 'Nexa',
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -116,7 +117,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   allowText: {
-    fontSize: 16,
+    fontSize: 20,
+    fontFamily: 'Nexa',
     fontWeight: '600',
     color: Colors.primary,
   },
@@ -130,7 +132,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   denyText: {
-    fontSize: 16,
+    fontSize: 20,
+    fontFamily: 'Nexa',
     fontWeight: '600',
     color: Colors.disabled,
   },

@@ -82,7 +82,7 @@ export default function ProfileScreen() {
           <StatCard
             icon={<MainIcon width={38} height={38} />}
             value={CHECKLIST_RECORD}
-            label={'рекорда закрытых\nчек-листов'}
+            label={'рекорд закрытых\nчек-листов'}
             onPress={() => router.push('/stats/checklists')}
           />
           
@@ -130,8 +130,8 @@ const styles = StyleSheet.create({
 
   userName: {
     paddingTop: 10,
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily: 'Nexa',
   },
 
   // сетка статистики
@@ -170,13 +170,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 30,
+    fontFamily: 'Nexa',
     marginBottom: 0,
     textAlign: 'center',
   },
   statLabel: {
     fontSize: 12,
+    fontFamily: 'Nexa-Reg',
     lineHeight: 14,
     textAlign: 'center',
   },
@@ -195,7 +196,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 35,
     fontSize: 18,
-    fontWeight: '700',
     color: Colors.primary,
   },
 });

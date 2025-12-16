@@ -244,7 +244,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   label: {
-    fontSize: 14,
+    fontFamily: 'Nexa',
+    fontSize: 15,
     marginBottom: 6,
   },
   input: {
@@ -254,7 +255,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     backgroundColor: Colors.white,
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
 
   },
 
@@ -265,7 +267,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.primary,
     borderRadius: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
@@ -273,13 +275,15 @@ const styles = StyleSheet.create({
   },
   areaInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
     paddingVertical: 0,
 
   },
   areaSuffix: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: 'Nexa',
     color: Colors.primary,
   },
 
@@ -305,14 +309,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 10,
     paddingHorizontal: 8,
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
   },
   // внешний вид "замороженного" поля для предустановленных комнат
   roomNameStatic: {
     justifyContent: 'center',
   },
   roomNameText: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
   },
   roomCountInput: {
     width: 64,
@@ -321,7 +327,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     backgroundColor: Colors.white,
     borderRadius: 10,
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
     marginLeft: 8,
     textAlign: 'center',
 

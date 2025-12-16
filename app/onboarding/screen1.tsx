@@ -12,7 +12,7 @@ export default function Screen1() {
     <OnboardingLayout
       top={
         <Text style={styles.title}>
-          Дом в порядке — жизнь в достатке!
+          {'Дом в порядке —\nжизнь в достатке!'}
         </Text>
       }
       center={
@@ -33,7 +33,8 @@ export default function Screen1() {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 22,
+    fontSize: 26,
+    fontFamily: 'Nexa',
     fontWeight: '600',
     color: Colors.text,
     textAlign: 'center',

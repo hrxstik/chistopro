@@ -18,12 +18,12 @@ export default function Step2() {
             source={require('@/assets/images/chubrik1_dirty1.png')}
             style={{ width: 121, height: 181 }}
           />
-          <CloudSmall text="Выбери вид твоей профессии" />
+          <CloudSmall text={"Выбери вид\nтвоей профессии"} />
         </View>
       }
       footer={<OnboardingButton title="Продолжить" disabled={!profession} onPress={() => router.push('/questionnaire/step3')} />}
     >
-      <Text style={{ marginBottom: 6 }}>Ваша профессия:</Text>
+      <Text style={{ marginBottom: 6, fontFamily: 'Nexa', fontSize: 15, }}>Ваша профессия:</Text>
 {[
   'Безработный',
   'Студент',

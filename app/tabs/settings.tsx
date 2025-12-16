@@ -437,7 +437,7 @@ headerTopRow: {
 },
 headerTitle: {
   fontSize: 20,
-  fontWeight: '700',
+  fontFamily: 'Nexa',
   textAlign: 'center',
   marginTop: 16,
 },
@@ -505,7 +505,7 @@ headerTitle: {
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: 'Nexa',
   },
   sectionDivider: {
     height: 1,
@@ -523,13 +523,15 @@ headerTitle: {
   },
 
   fieldLabel: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa',
     marginBottom: 6,
-    marginTop: 8,
+    marginTop: 2,
     paddingHorizontal: 0,
   },
   fieldLabelNoPad: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa',
   },
 
   areaWrapper: {
@@ -546,12 +548,14 @@ headerTitle: {
   },
   areaInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
     paddingVertical: 0,
   },
   areaSuffix: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
     color: Colors.primary,
   },
 
@@ -559,7 +563,7 @@ headerTitle: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: 8,
+    marginTop: 2,
     marginBottom: 4,
   },
   roomRow: {
@@ -575,8 +579,9 @@ headerTitle: {
     borderColor: Colors.primary,
     borderRadius: 10,
     paddingHorizontal: 8,
-    fontSize: 14,
+    fontSize: 15,
     marginLeft: 8,
+    fontFamily: 'Nexa-Reg',
     backgroundColor: Colors.white,
   },
   roomCountInput: {
@@ -586,7 +591,8 @@ headerTitle: {
     borderColor: Colors.primary,
     borderRadius: 10,
     paddingHorizontal: 8,
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
     marginLeft: 8,
     backgroundColor: Colors.white,
     textAlign: 'center',

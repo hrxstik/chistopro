@@ -71,8 +71,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     marginBottom: 6,
+    fontFamily: 'Nexa',
   },
   select: {
     height: 44,
@@ -86,7 +87,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   value: {
-    fontSize: 16,
+    fontFamily: 'Nexa-Reg',
+    fontSize: 15,
   },
   overlay: {
     flex: 1,

@@ -184,14 +184,14 @@ export default function AchievementsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { paddingTop: 40, paddingHorizontal: 16, paddingBottom: 8 },
+  header: { paddingTop: 40, paddingHorizontal: 16, paddingBottom: 0 },
   headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 20, fontFamily: 'Nexa' },
   topDivider: { height: 2, backgroundColor: Colors.primary },
   listContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24 },
 });

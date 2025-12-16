@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 18,
+    fontFamily: 'Nexa',
     fontWeight: '600',
     color: Colors.text,
   },

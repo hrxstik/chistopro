@@ -38,7 +38,8 @@ const styles = StyleSheet.create({
     borderWidth: 4,
   },
   text: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.text,
+    fontFamily: 'Nexa-Reg',
   },
 });

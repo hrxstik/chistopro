@@ -11,7 +11,7 @@ export default function Screen2() {
     <OnboardingLayout
       top={
         <OnboardingCloud
-          text={'Привет, я Чубрик!\nДавай вместе убираться дома!'}
+          text={'Привет, я Чубрик!\nДавай вместе\nубираться дома!'}
         />
       }
       center={

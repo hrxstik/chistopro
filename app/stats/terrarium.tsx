@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   header: {
     paddingTop: 40,
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 0,
   },
   headerTopRow: {
     flexDirection: 'row',
@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily: 'Nexa',
   },
 
   topDivider: {
@@ -108,7 +108,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   summaryText: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa',
   },
 
   listContent: {

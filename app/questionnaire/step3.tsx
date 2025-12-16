@@ -59,9 +59,8 @@ export default function Step3() {
             style={{ width: 121, height: 181 }}
           />
           <CloudSmall
-            width={220}
-            height={130}
-            text={'Расскажи о своих\nдомочадцах, чтобы мы \nподобрали задачи для тебя'}
+            width={190}
+            text={'Расскажи\nо своих домочадцах,\nчтобы мы \nподобрали задачи\nдля тебя'}
           />
         </View>
       }
@@ -100,7 +99,7 @@ export default function Step3() {
         <Pressable
           onPress={canAddMember ? addMember : undefined}
           style={{
-            marginTop: 8, // чтобы + не прилипал
+            marginTop: 8,
             width: 40,
             height: 40,
             borderRadius: 10,

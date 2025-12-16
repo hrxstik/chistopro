@@ -58,7 +58,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa',
     marginBottom: 6,
     color: Colors.text,
   },
@@ -69,6 +70,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     borderRadius: 10,
     paddingHorizontal: 12,
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
   },
 });

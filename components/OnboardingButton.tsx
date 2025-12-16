@@ -35,9 +35,9 @@ export function OnboardingButton({
 
 const styles = StyleSheet.create({
   button: {
-    width: '100%',
+    width: '70%',
     height: 52,
-    borderRadius: 26,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: Colors.primary,
     alignItems: 'center',
@@ -45,8 +45,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
   },
   text: {
+    fontFamily: 'Nexa',
     color: Colors.primary,
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '600',
   },
   disabled: {

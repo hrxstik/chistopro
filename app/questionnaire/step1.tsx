@@ -55,7 +55,7 @@ export default function Step1() {
   max={100}
 />
 
-      <Text style={{ marginBottom: 6 }}>Пол:</Text>
+      <Text style={{ marginBottom: 6, fontFamily: 'Nexa', fontSize: 15, }}>Пол:</Text>
 <RadioButton
   label="Мужской"
   selected={gender === 'male'}

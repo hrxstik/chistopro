@@ -22,7 +22,7 @@ type Task = {
 };
 
 const TOTAL_DAYS = 28;
-const COMPLETED_DAYS = 15;
+const COMPLETED_DAYS = 7;
 
 const INITIAL_TASKS: Task[] = [
   {
@@ -52,13 +52,13 @@ const INITIAL_TASKS: Task[] = [
 ];
 
 function getMascotSource(day: number) {
-  if (day <= 7) {
+  if (day <= 6) {
     return require('@/assets/images/chubrik1_dirty1.png');
   }
-  if (day <= 14) {
+  if (day <= 13) {
     return require('@/assets/images/chubrik1_dirty2.png');
   }
-  if (day <= 21) {
+  if (day <= 20) {
     return require('@/assets/images/chubrik1_dirty3.png');
   }
   return require('@/assets/images/chubrik1_clean.png');
@@ -200,12 +200,13 @@ const styles = StyleSheet.create({
   },
   mascotTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: 'Nexa',
     marginBottom: 4,
     textAlign: 'center',
   },
   levelText: {
     fontSize: 16,
+    fontFamily: 'Nexa-Reg',
     marginBottom: 12,
   },
   mascot: {
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: 'Nexa',
     color: Colors.text,
   },
 
@@ -269,16 +270,17 @@ const styles = StyleSheet.create({
   },
   phaseNumber: {
     fontSize: 14,
+    fontFamily: 'Nexa',
     color: Colors.primary,
-    fontWeight: '600',
   },
 
   // задачи
   tasksTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
+    fontFamily: 'Nexa',
+    marginTop: 0,
     marginBottom: 8,
+    textAlign: 'center',
   },
   taskRow: {
     flexDirection: 'row',
@@ -300,7 +302,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   taskTitle: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
     flexShrink: 1,
   },
   taskTitleCompleted: {

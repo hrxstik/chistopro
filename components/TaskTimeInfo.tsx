@@ -28,7 +28,8 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   text: {
-    fontSize: 12,
+    fontSize: 13,
+    fontFamily: 'Nexa',
     fontWeight: '600',
   },
 });

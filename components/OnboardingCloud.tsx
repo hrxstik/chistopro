@@ -29,10 +29,11 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   text: {
+    fontFamily: 'Nexa',
     position: 'absolute',
     paddingHorizontal: 16,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: '500',
     color: Colors.text,
     lineHeight: 22,

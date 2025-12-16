@@ -141,6 +141,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
+    fontFamily: 'Nexa',
     fontWeight: '600',
   },
   actions: {
@@ -155,7 +156,8 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa',
     marginBottom: 6,
     marginTop: 0, // как в step1: между InputField(Возраст) и "Пол"
   },

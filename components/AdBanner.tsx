@@ -30,6 +30,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
+    fontFamily: 'Nexa-Reg',
     fontSize: 14,
     color: Colors.text,
   },

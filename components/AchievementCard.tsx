@@ -83,12 +83,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,        // шрифт чуть больше
-    fontWeight: '700',
+    fontSize: 16, 
+    fontFamily: 'Nexa',       // шрифт чуть больше
     marginBottom: 2,
   },
   description: {
-    fontSize: 12,        // тоже немного больше
+    fontSize: 12,   
+    fontFamily: 'Nexa-Reg',     // тоже немного больше
     marginBottom: 8,
   },
   progressOuter: {
@@ -114,6 +115,6 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: 'Nexa',
   },
 });

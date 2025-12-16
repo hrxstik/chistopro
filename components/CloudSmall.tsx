@@ -9,10 +9,10 @@ type Props = {
 
 export function CloudSmall({ text, width = 177, height = 115 }: Props) {
   return (
-    <View style={[styles.container, { width, height }]}>
+    <View style={[styles.container]}>
       <Image
         source={require('@/assets/images/cloud_S.png')}
-        style={[styles.cloud, { width, height }]}
+        style={{resizeMode: 'contain', width: 225, height: 150 }}
       />
       <Text style={styles.text}>{text}</Text>
     </View>
@@ -25,12 +25,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cloud: {
-    resizeMode: 'contain',
-  },
   text: {
     position: 'absolute',
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa',
     fontWeight: '500',
     color: Colors.text,
     textAlign: 'center',

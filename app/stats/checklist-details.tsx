@@ -1,10 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import {
-    FlatList,
-    StyleSheet,
-    Text,
-    View,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 import { BackButton } from '@/components/BackButton';
@@ -117,8 +117,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '400',
+    fontSize: 20,
+    fontFamily: 'Nexa',
   },
   headerTitleBold: {
     fontWeight: '700',
@@ -158,7 +158,8 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   taskTitle: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
     flexShrink: 1,
   },
 

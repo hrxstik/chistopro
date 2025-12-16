@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontFamily: 'Nexa',
   },
   topDivider: {
     height: 2,
@@ -151,7 +151,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   summaryText: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa',
     marginBottom: 4,
   },
 
@@ -178,6 +179,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   dateText: {
-    fontSize: 14,
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
   },
 });
