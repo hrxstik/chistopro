@@ -2,7 +2,12 @@ import ChubrikHiddenIcon from '@/assets/icons/chubrik_hidden.svg';
 import CupIcon from '@/assets/icons/cup.svg';
 import GreenTick from '@/assets/icons/greentick.svg';
 import MainIcon from '@/assets/icons/main.svg';
-import ProfileIcon from '@/assets/icons/profiles/profile1.svg';
+import Profile1 from '@/assets/icons/profiles/profile.svg';
+import Profile2 from '@/assets/icons/profiles/profile2.svg';
+import Profile3 from '@/assets/icons/profiles/profile3.svg';
+import Profile4 from '@/assets/icons/profiles/profile4.svg';
+import Profile5 from '@/assets/icons/profiles/profile5.svg';
+import Profile6 from '@/assets/icons/profiles/profile6.svg';
 import { AdBanner } from '@/components/AdBanner';
 import { Colors } from '@/constants/colors';
 import { useRouter } from 'expo-router';
@@ -17,7 +22,7 @@ import {
 } from 'react-native';
 
 const premiumCloud = require('@/assets/images/premium.png');
-
+const AVATAR_COMPONENTS = [Profile1, Profile2, Profile3, Profile4, Profile5, Profile6];
 const USER_NAME = 'Ирина';
 const TASKS_DONE = 60;
 const CHECKLIST_RECORD = 15;
@@ -62,7 +67,7 @@ export default function ProfileScreen() {
       >
         {/* аватар и имя */}
         <View style={styles.headerBlock}>
-            <ProfileIcon width={122}/>
+            <Profile1/>
           <Text style={styles.userName}>{USER_NAME}</Text>
         </View>
 
@@ -124,6 +129,7 @@ const styles = StyleSheet.create({
   },
 
   userName: {
+    paddingTop: 10,
     fontSize: 18,
     fontWeight: '700',
   },

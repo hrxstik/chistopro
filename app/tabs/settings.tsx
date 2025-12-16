@@ -10,14 +10,12 @@ import {
   View,
 } from 'react-native';
 
-import { BackButton } from '@/components/BackButton';
+import ArrowDown from '@/assets/icons/arrowdown.svg';
 import { Checkbox } from '@/components/Checkbox';
 import { InputField } from '@/components/InputField';
 import { RadioButton } from '@/components/RadioButton';
 import { SelectField } from '@/components/SelectField';
 import { Colors } from '@/constants/colors';
-
-import ArrowDown from '@/assets/icons/arrowdown.svg';
 
 // аватары профиля
 import Profile1 from '@/assets/icons/profiles/profile.svg';
@@ -235,6 +233,7 @@ useFocusEffect(
     onToggle: () => void
   ) => (
     <View style={styles.sectionHeaderWrap}>
+  
       <Pressable style={styles.sectionHeader} onPress={onToggle}>
         <Text style={styles.sectionTitle}>{title}</Text>
         <ArrowDown
@@ -252,10 +251,9 @@ useFocusEffect(
       {/* шапка */}
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
-          <BackButton />
-          <Text style={styles.headerTitle}>Настройки</Text>
-          <View style={{ width: 32 }} />
-        </View>
+  <Text style={styles.headerTitle}>Настройки</Text>
+</View>
+
       </View>
 
 
@@ -426,21 +424,24 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    paddingTop: 40,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    backgroundColor: Colors.background,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  paddingTop: 48, // было 40
+  paddingHorizontal: 16,
+  paddingBottom: 12, // было 8
+  backgroundColor: Colors.background,
+},
+headerTopRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: 8,
+},
+headerTitle: {
+  fontSize: 20,
+  fontWeight: '700',
+  textAlign: 'center',
+  marginTop: 16,
+},
+
   topDivider: {
     height: 2,
     backgroundColor: Colors.primary,
@@ -503,7 +504,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
   },
   sectionDivider: {
@@ -537,7 +538,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     backgroundColor: Colors.white,
     borderRadius: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,

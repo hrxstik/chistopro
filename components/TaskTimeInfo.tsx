@@ -2,8 +2,8 @@ import { Colors } from '@/constants/colors';
 import { StyleSheet, Text, View } from 'react-native';
 
 type Props = {
-  text: string;          // любая строка: "4 мин", "03.12.25" и т.п.
-  color?: string;        // цвет текста и вертикальной палочки
+  text: string;         
+  color?: string;      
 };
 
 export function TaskTimeInfo({ text, color = Colors.primary }: Props) {

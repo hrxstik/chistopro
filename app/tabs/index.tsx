@@ -123,7 +123,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
 
-                {/* 5 фаз: 1 2 3 4 и 🎁 с палочками */}
+                
                 <View style={styles.phasesWrapper}>
                   <View style={styles.phaseItem}>
                     <View style={styles.phaseTick} />
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   levelText: {
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: 12,
   },
   mascot: {
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   progressLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
     color: Colors.text,
   },
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   phaseNumber: {
-    fontSize: 12,
+    fontSize: 14,
     color: Colors.primary,
     fontWeight: '600',
   },
