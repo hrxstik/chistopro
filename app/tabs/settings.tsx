@@ -1,6 +1,6 @@
 // app/(tabs)/settings.tsx
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -42,17 +42,16 @@ type Room = {
 };
 
 const DEFAULT_ROOMS: Room[] = [
-  { id: '1', name: 'Спальня',        count: '1', checked: true,  isCustom: false },
-  { id: '2', name: 'Кухня',          count: '1', checked: true,  isCustom: false },
-  { id: '3', name: 'Ванная',         count: '1', checked: true,  isCustom: false },
-  { id: '4', name: 'Кабинет',        count: '0', checked: false, isCustom: false },
-  { id: '5', name: 'Гостиная',       count: '1', checked: true,  isCustom: false },
-  { id: '6', name: 'Обеденная',      count: '0', checked: false, isCustom: false },
-  { id: '7', name: 'Подвал',         count: '0', checked: false, isCustom: false },
+  { id: '1', name: 'Спальня', count: '1', checked: true, isCustom: false },
+  { id: '2', name: 'Кухня', count: '1', checked: true, isCustom: false },
+  { id: '3', name: 'Ванная', count: '1', checked: true, isCustom: false },
+  { id: '4', name: 'Кабинет', count: '0', checked: false, isCustom: false },
+  { id: '5', name: 'Гостиная', count: '1', checked: true, isCustom: false },
+  { id: '6', name: 'Обеденная', count: '0', checked: false, isCustom: false },
+  { id: '7', name: 'Подвал', count: '0', checked: false, isCustom: false },
   { id: '8', name: 'Тренажёрный зал', count: '1', checked: true, isCustom: true },
 ];
 
-// демо-домочадцы
 const DEFAULT_MEMBERS: HouseholdMember[] = [
   {
     id: 'h1',
@@ -72,7 +71,6 @@ const DEFAULT_MEMBERS: HouseholdMember[] = [
   },
 ];
 
-// утилита для числовых полей
 const clampNumeric = (text: string, min?: number, max?: number) => {
   const digits = text.replace(/\D/g, '');
   if (digits === '') return '';
@@ -105,7 +103,6 @@ const AVATAR_COMPONENTS = [Profile1, Profile2, Profile3, Profile4, Profile5, Pro
 export default function SettingsScreen() {
   const router = useRouter();
 
-  // аватар — индекс выбранного SVG
   const [selectedAvatarIndex, setSelectedAvatarIndex] = useState(0);
 
   // личная информация
@@ -113,7 +110,7 @@ export default function SettingsScreen() {
   const [gender, setGender] = useState<Gender>('female');
   const [age, setAge] = useState('23');
   const [timezone, setTimezone] = useState(TIMEZONES[0]);
-  const [profession, setProfession] = useState(PROFESSIONS[1]); // Студент
+  const [profession, setProfession] = useState(PROFESSIONS[1]);
 
   // дом
   const [area, setArea] = useState('63');
@@ -123,24 +120,16 @@ export default function SettingsScreen() {
   // домочадцы
   const [members, setMembers] = useState<HouseholdMember[]>(DEFAULT_MEMBERS);
 
-  // сворачиваемые блоки
-  const [personalOpen, setPersonalOpen] = useState(true);
-  const [homeOpen, setHomeOpen] = useState(true);
-  const [householdOpen, setHouseholdOpen] = useState(true);
+  // по умолчанию всё свернуто
+  const [personalOpen, setPersonalOpen] = useState(false);
+  const [homeOpen, setHomeOpen] = useState(false);
+  const [householdOpen, setHouseholdOpen] = useState(false);
 
   const createId = () => Date.now().toString();
 
-  const handleChangeAge = (text: string) => {
-    setAge(clampNumeric(text, 0, 100));
-  };
-
-  const handleChangeArea = (text: string) => {
-    setArea(clampNumeric(text, 1)); // минимум 1
-  };
-
-  const handleChangePets = (text: string) => {
-    setPetsCount(clampNumeric(text, 0)); // минимум 0
-  };
+  const handleChangeAge = (text: string) => setAge(clampNumeric(text, 0, 100));
+  const handleChangeArea = (text: string) => setArea(clampNumeric(text, 1));
+  const handleChangePets = (text: string) => setPetsCount(clampNumeric(text, 0));
 
   const handleToggleRoom = (id: string) => {
     setRooms((prev) =>
@@ -149,7 +138,6 @@ export default function SettingsScreen() {
           if (room.id !== id) return room;
 
           if (room.isCustom && room.checked) {
-            // кастомная и выключаем — удаляем
             return { ...room, checked: false, _remove: true } as any;
           }
 
@@ -159,20 +147,14 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleChangeRoomName = (id: string, name: string) => {
-    setRooms((prev) =>
-      prev.map((room) =>
-        room.id === id ? { ...room, name } : room
-      )
-    );
+  const handleChangeRoomName = (id: string, roomName: string) => {
+    setRooms((prev) => prev.map((room) => (room.id === id ? { ...room, name: roomName } : room)));
   };
 
   const handleChangeRoomCount = (id: string, count: string) => {
     setRooms((prev) =>
       prev.map((room) =>
-        room.id === id
-          ? { ...room, count: clampNumeric(count, 0, 10) }
-          : room
+        room.id === id ? { ...room, count: clampNumeric(count, 0, 10) } : room
       )
     );
   };
@@ -180,38 +162,45 @@ export default function SettingsScreen() {
   const handleAddRoom = () => {
     setRooms((prev) => [
       ...prev,
-      {
-        id: createId(),
-        name: '',
-        count: '0',
-        checked: true,
-        isCustom: true,
-      },
+      { id: createId(), name: '', count: '0', checked: true, isCustom: true },
     ]);
   };
 
-  // домочадцы — хэндлеры
   const updateMember = (id: string, patch: Partial<HouseholdMember>) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, ...patch } : m))
-    );
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   };
 
-  const deleteMember = (id: string) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
-  };
+  const deleteMember = (id: string) => setMembers((prev) => prev.filter((m) => m.id !== id));
 
+  // ✅ FIX: удобная функция "свернуть всех"
+  const collapseAllMembers = useCallback(() => {
+    setMembers((prev) => prev.map((m) => ({ ...m, expanded: false })));
+  }, []);
+  const collapseAllSections = useCallback(() => {
+  setPersonalOpen(false);
+  setHomeOpen(false);
+  setHouseholdOpen(false);
+  // на всякий случай — домочадцев тоже внутрь
+  collapseAllMembers();
+}, [collapseAllMembers]);
+
+  // ✅ FIX 1: при открытии одного домочадца — остальные сворачиваются
   const toggleMember = (id: string) => {
-    setMembers((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, expanded: !m.expanded } : m
-      )
-    );
+    setMembers((prev) => {
+      const target = prev.find((m) => m.id === id);
+      const nextExpanded = !(target?.expanded ?? false);
+
+      return prev.map((m) => {
+        if (m.id === id) return { ...m, expanded: nextExpanded };
+        return { ...m, expanded: false };
+      });
+    });
   };
 
+  // ✅ при добавлении — новый открыт, остальные закрыты
   const handleAddMember = () => {
     setMembers((prev) => [
-      ...prev,
+      ...prev.map((m) => ({ ...m, expanded: false })),
       {
         id: createId(),
         name: '',
@@ -223,7 +212,40 @@ export default function SettingsScreen() {
     ]);
   };
 
+  // ✅ FIX 2a: если секция "домочадцы" закрывается — свернуть всех внутри
+  useEffect(() => {
+    if (!householdOpen) collapseAllMembers();
+  }, [householdOpen, collapseAllMembers]);
+
+  // ✅ FIX 2b: при уходе с экрана (переход в другое окно) — свернуть всех
+useFocusEffect(
+  useCallback(() => {
+    return () => {
+      collapseAllSections(); // ✅ при уходе с экрана: закрыть все 3 секции + домочадцев
+    };
+  }, [collapseAllSections])
+);
+
+
   const SelectedAvatar = AVATAR_COMPONENTS[selectedAvatarIndex];
+
+  const renderSectionHeader = (
+    title: string,
+    open: boolean,
+    onToggle: () => void
+  ) => (
+    <View style={styles.sectionHeaderWrap}>
+      <Pressable style={styles.sectionHeader} onPress={onToggle}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <ArrowDown
+          width={16}
+          height={16}
+          style={{ transform: [{ rotate: open ? '0deg' : '-90deg' }] }}
+        />
+      </Pressable>
+      <View style={styles.sectionDivider} />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -235,17 +257,16 @@ export default function SettingsScreen() {
           <View style={{ width: 32 }} />
         </View>
       </View>
-      <View style={styles.topDivider} />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Аватар и выбор иконки */}
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Аватар */}
         <View style={styles.avatarBlock}>
-          <View style={styles.avatarCircle}>
+          <View>
             <SelectedAvatar width={100} height={100} />
           </View>
+
+          <View style={styles.avatarRowOffset} />
 
           <View style={styles.avatarRow}>
             {AVATAR_COMPONENTS.map((Icon, index) => (
@@ -265,29 +286,13 @@ export default function SettingsScreen() {
 
         {/* Личная информация */}
         <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeaderBox}>
-            <Pressable
-              style={styles.sectionHeader}
-              onPress={() => setPersonalOpen((v) => !v)}
-            >
-              <Text style={styles.sectionTitle}>Личная информация</Text>
-              <ArrowDown
-                width={16}
-                height={16}
-                style={{
-                  transform: [{ rotate: personalOpen ? '0deg' : '-90deg' }],
-                }}
-              />
-            </Pressable>
-          </View>
+          {renderSectionHeader('Личная информация', personalOpen, () =>
+            setPersonalOpen((v) => !v)
+          )}
 
           {personalOpen && (
             <View style={styles.sectionBody}>
-              <InputField
-                label="Имя:"
-                value={name}
-                onChangeText={setName}
-              />
+              <InputField label="Имя:" value={name} onChangeText={setName} />
 
               <Text style={styles.fieldLabel}>Пол:</Text>
               <RadioButton
@@ -329,26 +334,12 @@ export default function SettingsScreen() {
 
         {/* Информация о доме */}
         <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeaderBox}>
-            <Pressable
-              style={styles.sectionHeader}
-              onPress={() => setHomeOpen((v) => !v)}
-            >
-              <Text style={styles.sectionTitle}>Информация о доме</Text>
-              <ArrowDown
-                width={16}
-                height={16}
-                style={{
-                  transform: [{ rotate: homeOpen ? '0deg' : '-90deg' }],
-                }}
-              />
-            </Pressable>
-          </View>
+          {renderSectionHeader('Информация о доме', homeOpen, () => setHomeOpen((v) => !v))}
 
           {homeOpen && (
             <View style={styles.sectionBody}>
-              {/* Площадь дома */}
               <Text style={styles.fieldLabel}>Площадь дома:</Text>
+
               <View style={styles.areaWrapper}>
                 <TextInput
                   style={styles.areaInput}
@@ -359,7 +350,6 @@ export default function SettingsScreen() {
                 <Text style={styles.areaSuffix}>м²</Text>
               </View>
 
-              {/* Кол-во животных */}
               <InputField
                 label="Количество домашних животных:"
                 value={petsCount}
@@ -367,25 +357,19 @@ export default function SettingsScreen() {
                 keyboardType="numeric"
               />
 
-              {/* комнаты */}
               <View style={styles.roomsHeader}>
-                <Text style={styles.fieldLabel}>Типы комнат:</Text>
-                <Text style={styles.fieldLabel}>Количество:</Text>
+                <Text style={styles.fieldLabelNoPad}>Типы комнат:</Text>
+                <Text style={styles.fieldLabelNoPad}>Количество:</Text>
               </View>
 
               {rooms.map((room) => (
                 <View key={room.id} style={styles.roomRow}>
-                  <Checkbox
-                    checked={room.checked}
-                    onToggle={() => handleToggleRoom(room.id)}
-                  />
+                  <Checkbox checked={room.checked} onToggle={() => handleToggleRoom(room.id)} />
 
                   <TextInput
                     style={styles.roomNameInput}
                     value={room.name}
-                    onChangeText={(text) =>
-                      room.isCustom && handleChangeRoomName(room.id, text)
-                    }
+                    onChangeText={(text) => room.isCustom && handleChangeRoomName(room.id, text)}
                     editable={room.isCustom}
                     placeholder="Название комнаты"
                   />
@@ -393,16 +377,14 @@ export default function SettingsScreen() {
                   <TextInput
                     style={styles.roomCountInput}
                     value={room.count}
-                    onChangeText={(text) =>
-                      handleChangeRoomCount(room.id, text)
-                    }
+                    onChangeText={(text) => handleChangeRoomCount(room.id, text)}
                     keyboardType="numeric"
                   />
                 </View>
               ))}
 
-              <Pressable onPress={handleAddRoom} style={styles.addRoomButton}>
-                <Text style={styles.addRoomPlus}>+</Text>
+              <Pressable onPress={handleAddRoom} style={styles.addButton}>
+                <Text style={styles.addPlus}>+</Text>
               </Pressable>
             </View>
           )}
@@ -410,21 +392,9 @@ export default function SettingsScreen() {
 
         {/* Информация о домочадцах */}
         <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeaderBox}>
-            <Pressable
-              style={styles.sectionHeader}
-              onPress={() => setHouseholdOpen((v) => !v)}
-            >
-              <Text style={styles.sectionTitle}>Информация о домочадцах</Text>
-              <ArrowDown
-                width={16}
-                height={16}
-                style={{
-                  transform: [{ rotate: householdOpen ? '0deg' : '-90deg' }],
-                }}
-              />
-            </Pressable>
-          </View>
+          {renderSectionHeader('Информация о домочадцах', householdOpen, () =>
+            setHouseholdOpen((v) => !v)
+          )}
 
           {householdOpen && (
             <View style={styles.sectionBody}>
@@ -438,9 +408,8 @@ export default function SettingsScreen() {
                 />
               ))}
 
-              {/* + всегда доступен при развёрнутом блоке */}
-              <Pressable onPress={handleAddMember} style={styles.addRoomButton}>
-                <Text style={styles.addRoomPlus}>+</Text>
+              <Pressable onPress={handleAddMember} style={styles.addButton}>
+                <Text style={styles.addPlus}>+</Text>
               </Pressable>
             </View>
           )}
@@ -453,8 +422,9 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background, // бледно-голубой фон всего окна
+    backgroundColor: Colors.background,
   },
+
   header: {
     paddingTop: 40,
     paddingHorizontal: 16,
@@ -481,8 +451,6 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
 
-  /* Аватар */
-
   avatarBlock: {
     alignItems: 'center',
     marginBottom: 24,
@@ -496,7 +464,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
-    backgroundColor: '#ffffff',
+  },
+  avatarRowOffset: {
+    height: 8,
   },
   avatarRow: {
     flexDirection: 'row',
@@ -507,7 +477,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.7,
@@ -518,54 +487,61 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
 
-  /* Общие стили секций */
-
   sectionContainer: {
     marginBottom: 16,
   },
-  sectionHeaderBox: {
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    backgroundColor: '#ffffff',
-    overflow: 'hidden',
+
+  sectionHeaderWrap: {
+    backgroundColor: 'transparent',
   },
   sectionHeader: {
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#F5FAFF',
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
   },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: Colors.primary,
+    opacity: 0.8,
+    width: '95%',
+    alignSelf: 'center',
+    marginTop: 5,
+  },
+
   sectionBody: {
-    paddingHorizontal: 12, // единая "рамка" для всех полей внутри секции
-    paddingVertical: 8,
-    marginTop: 4,
+    marginTop: 10,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
 
   fieldLabel: {
     fontSize: 14,
     marginBottom: 6,
     marginTop: 8,
+    paddingHorizontal: 0,
   },
-
-  /* Площадь дома */
+  fieldLabelNoPad: {
+    fontSize: 14,
+  },
 
   areaWrapper: {
     height: 44,
     borderWidth: 1.5,
     borderColor: Colors.primary,
+    backgroundColor: Colors.white,
     borderRadius: 10,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    backgroundColor: '#ffffff', // белый фон как у остальных инпутов
+    width: '100%',
   },
   areaInput: {
     flex: 1,
@@ -578,8 +554,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
   },
 
-  /* Комнаты */
-
   roomsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -591,6 +565,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
+    width: '100%',
   },
   roomNameInput: {
     flex: 1,
@@ -600,7 +575,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 8,
     fontSize: 14,
-    backgroundColor: '#FFFFFF',
+    marginLeft: 8,
+    backgroundColor: Colors.white,
   },
   roomCountInput: {
     width: 64,
@@ -611,10 +587,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     fontSize: 14,
     marginLeft: 8,
+    backgroundColor: Colors.white,
     textAlign: 'center',
-    backgroundColor: '#FFFFFF',
   },
-  addRoomButton: {
+
+  addButton: {
     width: 40,
     height: 40,
     borderRadius: 10,
@@ -623,9 +600,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
-    backgroundColor: '#ffffff',
+    backgroundColor: Colors.white,
   },
-  addRoomPlus: {
+  addPlus: {
     fontSize: 24,
     color: Colors.primary,
   },

@@ -46,7 +46,7 @@ export function HouseholdCard({
         </View>
       ) : (
         <View style={styles.collapsedRow}>
-          <Pressable onPress={onToggle} style={{ flex: 1 }}>
+          <Pressable onPress={onToggle} style={{ flex: 1}}>
             <Text style={styles.title}>{member.name}</Text>
           </Pressable>
 
@@ -128,6 +128,7 @@ const styles = StyleSheet.create({
   },
   iconBtn: {
     marginLeft: 12,
+    marginTop: 20,
   },
 
   /* header-collapsed */

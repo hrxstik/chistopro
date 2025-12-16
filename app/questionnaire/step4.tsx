@@ -253,6 +253,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
     borderRadius: 10,
     paddingHorizontal: 12,
+    backgroundColor: Colors.white,
     fontSize: 16,
     marginBottom: 16,
   },
@@ -268,11 +269,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
+    backgroundColor: Colors.white,
   },
   areaInput: {
     flex: 1,
     fontSize: 16,
     paddingVertical: 0,
+
   },
   areaSuffix: {
     marginLeft: 8,
@@ -299,6 +302,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderWidth: 1.5,
     borderColor: Colors.primary,
+    backgroundColor: Colors.white,
     borderRadius: 10,
     paddingHorizontal: 8,
     fontSize: 14,
@@ -315,11 +319,12 @@ const styles = StyleSheet.create({
     height: 40,
     borderWidth: 1.5,
     borderColor: Colors.primary,
+    backgroundColor: Colors.white,
     borderRadius: 10,
-    paddingHorizontal: 8,
     fontSize: 14,
     marginLeft: 8,
     textAlign: 'center',
+
   },
 
   addButton: {
@@ -328,6 +333,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: Colors.primary,
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-start',

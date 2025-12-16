@@ -1,3 +1,7 @@
+import ChubrikHiddenIcon from '@/assets/icons/chubrik_hidden.svg';
+import CupIcon from '@/assets/icons/cup.svg';
+import GreenTick from '@/assets/icons/greentick.svg';
+import MainIcon from '@/assets/icons/main.svg';
 import ProfileIcon from '@/assets/icons/profiles/profile1.svg';
 import { AdBanner } from '@/components/AdBanner';
 import { Colors } from '@/constants/colors';
@@ -11,11 +15,6 @@ import {
   Text,
   View,
 } from 'react-native';
-
-import ChubrikHiddenIcon from '@/assets/icons/chubrik_hidden.svg';
-import CupIcon from '@/assets/icons/cup.svg';
-import GreenTick from '@/assets/icons/greentick.svg';
-import MainIcon from '@/assets/icons/main.svg';
 
 const premiumCloud = require('@/assets/images/premium.png');
 
@@ -110,10 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  topDivider: {
-    height: 2,
-    backgroundColor: Colors.primary,
-  },
+
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 24,

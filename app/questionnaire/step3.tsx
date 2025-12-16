@@ -6,13 +6,7 @@ import { Colors } from '@/constants/colors';
 import { HouseholdMember } from '@/types/household';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 
 export default function Step3() {
   const router = useRouter();
@@ -31,6 +25,12 @@ export default function Step3() {
 
   const scrollRef = useRef<ScrollView | null>(null);
 
+  const isMemberComplete = (m: HouseholdMember) =>
+    m.gender !== null && m.age.trim() !== '' && m.profession !== '';
+
+  const isValid = members.length === 0 || members.every(isMemberComplete);
+  const canAddMember = members.length === 0 || members.every(isMemberComplete);
+
   const addMember = () => {
     setMembers((prev) => [
       ...prev.map((m) => ({ ...m, expanded: false })),
@@ -44,22 +44,10 @@ export default function Step3() {
       },
     ]);
 
-    // 5. после добавления скроллим к верхнему домочадцу
     requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     });
   };
-const isMemberComplete = (m: HouseholdMember) =>
-  m.gender !== null &&
-  m.age.trim() !== '' &&
-  m.profession !== '';
-
-const isValid =
-  members.length === 0 || members.every(isMemberComplete);
-const canAddMember =
-  members.length === 0 || members.every(isMemberComplete);
-
-
 
   return (
     <QuestionnaireLayout
@@ -71,9 +59,7 @@ const canAddMember =
             style={{ width: 121, height: 181 }}
           />
           <CloudSmall
-            text={
-              'Расскажи о своих\nдомочадцах, чтобы мы \nподобрали задачи для тебя'
-            }
+            text={'Расскажи о своих\nдомочадцах, чтобы мы \nподобрали задачи для тебя'}
           />
         </View>
       }
@@ -85,10 +71,7 @@ const canAddMember =
         />
       }
     >
-      <ScrollView
-        ref={scrollRef}
-        contentContainerStyle={{ paddingBottom: 32 }}
-      >
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: 32 }}>
         {members.map((member) => (
           <HouseholdCard
             key={member.id}
@@ -98,49 +81,37 @@ const canAddMember =
                 prev.map((m) =>
                   m.id === member.id
                     ? { ...m, expanded: !m.expanded }
-                    : { ...m, expanded: false } // 6. остальные сворачиваем
+                    : { ...m, expanded: false }
                 )
               )
             }
             onChange={(patch) =>
               setMembers((prev) =>
-                prev.map((m) =>
-                  m.id === member.id ? { ...m, ...patch } : m
-                )
+                prev.map((m) => (m.id === member.id ? { ...m, ...patch } : m))
               )
             }
-            onDelete={() =>
-              setMembers((prev) =>
-                prev.filter((m) => m.id !== member.id)
-              )
-            }
+            onDelete={() => setMembers((prev) => prev.filter((m) => m.id !== member.id))}
           />
         ))}
 
         {/* Кнопка + */}
-<Pressable
-  onPress={canAddMember ? addMember : undefined}
-  style={{
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: canAddMember ? 1 : 0.4, // визуально видно, что нельзя
-  }}
->
-  <Text
-    style={{
-      fontSize: 24,
-      color: Colors.primary,
-    }}
-  >
-    +
-  </Text>
-</Pressable>
-
+        <Pressable
+          onPress={canAddMember ? addMember : undefined}
+          style={{
+            marginTop: 8, // чтобы + не прилипал
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            borderWidth: 1.5,
+            borderColor: Colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: Colors.white,
+            opacity: canAddMember ? 1 : 0.4,
+          }}
+        >
+          <Text style={{ fontSize: 24, color: Colors.primary }}>+</Text>
+        </Pressable>
       </ScrollView>
     </QuestionnaireLayout>
   );

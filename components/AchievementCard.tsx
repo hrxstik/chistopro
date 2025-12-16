@@ -26,6 +26,7 @@ export function AchievementCard({
   const titleColor = isCompleted ? Colors.text : Colors.disabled;
   const descColor = isCompleted ? '#9BA4AF' : Colors.disabled;
   const barFillColor = isCompleted ? Colors.primary : Colors.disabled;
+  const outerBorderColor = isCompleted ? Colors.primary : Colors.disabled;
 
   return (
     <View style={[styles.card, { borderColor }]}>
@@ -42,7 +43,7 @@ export function AchievementCard({
           {description}
         </Text>
 
-        <View style={styles.progressOuter}>
+        <View style={[styles.progressOuter, { borderColor: outerBorderColor }]}>
           <View
             style={[
               styles.progressInner,

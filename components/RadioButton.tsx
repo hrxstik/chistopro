@@ -32,6 +32,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 12,
     marginBottom: 8,
+    backgroundColor: Colors.white,
   },
   selected: {
     borderWidth: 4,
