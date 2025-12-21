@@ -52,10 +52,9 @@ const styles = StyleSheet.create({
   },
   disabled: {
     backgroundColor: Colors.white,
-    borderColor: Colors.primary,
+    borderColor: Colors.disabledprimary,
   },
   disabledText: {
-    color: Colors.primary,
-    opacity: 0.4,
+    color: Colors.disabledprimary,
   },
 });
