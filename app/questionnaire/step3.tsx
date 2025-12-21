@@ -104,14 +104,13 @@ export default function Step3() {
             height: 40,
             borderRadius: 10,
             borderWidth: 1.5,
-            borderColor: Colors.primary,
+            borderColor: canAddMember ? Colors.primary : Colors.disabledprimary,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: Colors.white,
-            opacity: canAddMember ? 1 : 0.4,
           }}
         >
-          <Text style={{ fontSize: 24, color: Colors.primary }}>+</Text>
+          <Text style={{ fontSize: 24, color: canAddMember ? Colors.primary : Colors.disabledprimary, }}>+</Text>
         </Pressable>
       </ScrollView>
     </QuestionnaireLayout>
