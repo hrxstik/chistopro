@@ -51,9 +51,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   disabled: {
-    opacity: 0.4,
+    backgroundColor: Colors.white,
+    borderColor: Colors.primary,
   },
   disabledText: {
     color: Colors.primary,
+    opacity: 0.4,
   },
 });
