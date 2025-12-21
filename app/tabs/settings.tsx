@@ -117,6 +117,10 @@ export default function SettingsScreen() {
 
   // домочадцы
   const [members, setMembers] = useState<HouseholdMember[]>(DEFAULT_MEMBERS);
+  const isMemberComplete = (m: HouseholdMember) =>
+    m.gender !== null && m.age.trim() !== '' && m.profession !== '';
+
+  const canAddMember = members.length === 0 || members.every(isMemberComplete);
 
   // по умолчанию всё свернуто
   const [personalOpen, setPersonalOpen] = useState(false);
@@ -197,18 +201,21 @@ export default function SettingsScreen() {
 
   // ✅ при добавлении — новый открыт, остальные закрыты
   const handleAddMember = () => {
+    if (!canAddMember) return;
+
     setMembers((prev) => [
       ...prev.map((m) => ({ ...m, expanded: false })),
       {
         id: createId(),
-        name: '',
+        name: `Домочадец ${prev.length + 1}`,
         age: '',
-        gender: 'female',
+        gender: null,
         profession: '',
         expanded: true,
       } as HouseholdMember,
     ]);
   };
+
 
   // ✅ FIX 2a: если секция "домочадцы" закрывается — свернуть всех внутри
   useEffect(() => {
@@ -406,9 +413,13 @@ useFocusEffect(
                 />
               ))}
 
-              <Pressable onPress={handleAddMember} style={styles.addButton}>
+              <Pressable
+                onPress={canAddMember ? handleAddMember : undefined}
+                style={[styles.addButton, { opacity: canAddMember ? 1 : 0.4 }]}
+              >
                 <Text style={styles.addPlus}>+</Text>
               </Pressable>
+
             </View>
           )}
         </View>

@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 24,
-    paddingBottom: 45,
+    paddingBottom: '20%',
   },
   header: {
     marginTop: 100,
@@ -47,8 +47,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footer: {
-    paddingBottom: '10%',
-    backgroundColor: Colors.background,
-    alignItems: 'center', // фон под кнопкой тот же
+    alignItems: 'center',
   },
 });

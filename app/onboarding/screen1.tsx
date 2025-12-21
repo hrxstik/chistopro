@@ -35,7 +35,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontFamily: 'Nexa',
-    fontWeight: '600',
     color: Colors.text,
     textAlign: 'center',
   },
