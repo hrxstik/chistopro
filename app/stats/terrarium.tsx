@@ -53,21 +53,20 @@ export default function TerrariumScreen() {
       </View>
 
       {/* список */}
-      <FlatList
-        data={CHUBRIKS}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        ListFooterComponent={() => <View style={styles.separator} />}
-        renderItem={({ item }) => (
-          <ChubrikTerrariumItem
-            name={item.name}
-            acquired={item.acquired}
-            cleaned={item.cleaned}
-          />
-        )}
-        showsVerticalScrollIndicator={false}
-      />
+<FlatList
+  data={CHUBRIKS}
+  keyExtractor={(item) => item.id}
+  contentContainerStyle={styles.listContent}
+  renderItem={({ item }) => (
+    <ChubrikTerrariumItem
+      name={item.name}
+      acquired={item.acquired}
+      cleaned={item.cleaned}
+    />
+  )}
+  showsVerticalScrollIndicator={false}
+/>
+
       
 
     </View>
@@ -112,9 +111,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Nexa',
   },
 
-  listContent: {
-    paddingBottom: 40,
-  },
+listContent: {
+  paddingHorizontal: 16,
+  paddingBottom: 40,
+},
 
   separator: {
     width: '100%',

@@ -17,18 +17,27 @@ type Props = {
 export function ChubrikTerrariumItem({ name, acquired, cleaned }: Props) {
   const title = acquired ? name : 'Неизвестно';
 
-  const icon = cleaned ? (
+  // (необязательно, но логично) если не получен — показываем скрытый
+  const isVisible = acquired && cleaned;
+
+  const icon = isVisible ? (
     <Image source={cleanChubrik} style={styles.cleanImage} />
   ) : (
     <HiddenIcon width={100} height={90} />
   );
 
+  // цвета как у достижений: активный/неактивный
+  const borderColor = acquired ? Colors.primary : Colors.disabled;
+  const titleColor = acquired ? Colors.text : Colors.disabled;
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { borderColor }]}>
       <View style={styles.iconWrapper}>{icon}</View>
 
       <View style={styles.textWrapper}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: titleColor }]} numberOfLines={2}>
+          {title}
+        </Text>
       </View>
     </View>
   );
@@ -38,16 +47,20 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 24,
+    borderWidth: 1.5,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: Colors.white,
+    marginBottom: 8,
   },
 
   iconWrapper: {
     width: 90,
+    height: 90,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 10,
   },
 
   cleanImage: {
@@ -62,10 +75,9 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Nexa',
     fontWeight: '600',
-    color: Colors.text,
   },
 });
 

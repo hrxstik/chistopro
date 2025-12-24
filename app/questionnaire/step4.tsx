@@ -54,23 +54,32 @@ export default function Step4() {
 
   const createId = () => Date.now().toString();
 
-  const handleToggleRoom = (id: string) => {
-    setRooms((prev) =>
-      prev
-        .map((room) => {
-          if (room.id !== id) return room;
+const handleToggleRoom = (id: string) => {
+  setRooms((prev) =>
+    prev
+      .map((room) => {
+        if (room.id !== id) return room;
 
-          // если это кастомная комната и мы снимаем галочку — пометим на удаление
-          if (room.isCustom && room.checked) {
-            return { ...room, checked: false, _remove: true } as any;
-          }
+        const nextChecked = !room.checked;
 
-          return { ...room, checked: !room.checked };
-        })
-        // удаляем кастомные комнаты, у которых сняли галочку
-        .filter((room: any) => !room._remove)
-    );
-  };
+        // кастомную комнату при выключении удаляем
+        if (room.isCustom && room.checked) {
+          return { ...room, checked: false, count: '', _remove: true } as any;
+        }
+
+        // сняли чекбокс -> очищаем количество
+        if (!nextChecked) {
+          return { ...room, checked: false, count: '' };
+        }
+
+        // включили чекбокс -> если пусто, ставим 1
+        const nextCount = room.count.trim() === '' ? '1' : room.count;
+
+        return { ...room, checked: true, count: nextCount };
+      })
+      .filter((room: any) => !room._remove)
+  );
+};
 
   const handleChangeRoomName = (id: string, name: string) => {
     setRooms((prev) =>
@@ -81,15 +90,34 @@ export default function Step4() {
     );
   };
 
-  const handleChangeRoomCount = (id: string, count: string) => {
+const handleChangeRoomCount = (id: string, text: string) => {
+  // разрешаем очистку поля
+  const digits = text.replace(/\D/g, '');
+  if (digits === '') {
     setRooms((prev) =>
       prev.map((room) =>
-        room.id === id
-          ? { ...room, count: clampNumeric(count, 1, 10) }
-          : room
+        room.id === id ? { ...room, count: '', checked: false } : room
       )
     );
-  };
+    return;
+  }
+
+  // 0 вводить нельзя -> минимум 1
+  const nextCount = clampNumeric(digits, 1, 10);
+
+  setRooms((prev) =>
+    prev.map((room) =>
+      room.id === id
+        ? {
+            ...room,
+            count: nextCount,
+            // ввели 1–10 -> автоматически включаем чекбокс
+            checked: true,
+          }
+        : room
+    )
+  );
+};
 
   const handleAddRoom = () => {
     setRooms((prev) => [

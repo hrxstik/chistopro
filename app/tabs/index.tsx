@@ -66,11 +66,11 @@ function getMascotSource(day: number) {
 
 // 5 фаз / уровней
 function getLevel(day: number) {
-  if (day <= 7) return 1;      // 0–7
-  if (day <= 14) return 2;     // 8–14
-  if (day <= 21) return 3;     // 15–21
-  if (day <= 27) return 4;     // 22–27
-  return 5;                    // 28+ подарок
+  if (day < 7) return "1 уровень";      // 0–7
+  if (day < 14) return "2 уровень";     // 8–14
+  if (day < 21) return "3 уровень";     // 15–21
+  if (day < 28) return "4 уровень";     // 22–27
+  return "Привычка сформирована";                    // 28 подарок
 }
 
 export default function HomeScreen() {
@@ -103,7 +103,7 @@ export default function HomeScreen() {
             
             <View style={styles.headerBlock}>
               <Text style={styles.mascotTitle}>Чубрик обыкновенный</Text>
-              <Text style={styles.levelText}>{level} уровень</Text>
+              <Text style={styles.levelText}>{level}</Text>
 
               <Image source={mascotSource} style={styles.mascot} />
 

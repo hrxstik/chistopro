@@ -49,12 +49,13 @@ const DEFAULT_ROOMS: Room[] = [
   { id: '1', name: 'Спальня', count: '1', checked: true, isCustom: false },
   { id: '2', name: 'Кухня', count: '1', checked: true, isCustom: false },
   { id: '3', name: 'Ванная', count: '1', checked: true, isCustom: false },
-  { id: '4', name: 'Кабинет', count: '0', checked: false, isCustom: false },
+  { id: '4', name: 'Кабинет', count: '', checked: false, isCustom: false },
   { id: '5', name: 'Гостиная', count: '1', checked: true, isCustom: false },
-  { id: '6', name: 'Обеденная', count: '0', checked: false, isCustom: false },
-  { id: '7', name: 'Подвал', count: '0', checked: false, isCustom: false },
+  { id: '6', name: 'Обеденная', count: '', checked: false, isCustom: false },
+  { id: '7', name: 'Подвал', count: '', checked: false, isCustom: false },
   { id: '8', name: 'Тренажёрный зал', count: '1', checked: true, isCustom: true },
 ];
+
 
 const DEFAULT_MEMBERS: HouseholdMember[] = [
   {
@@ -222,34 +223,97 @@ export default function SettingsScreen() {
   const handleChangeAge = (text: string) => setAge(clampNumeric(text, 0, 100));
   const handleChangeArea = (text: string) => setArea(clampNumeric(text, 1));
   const handleChangePets = (text: string) => setPetsCount(clampNumeric(text, 0));
+const isCustomRoomComplete = (r: Room) =>
+  !r.isCustom || (r.name.trim() !== '' && r.count.trim() !== '');
 
-  const handleToggleRoom = (id: string) => {
-    setRooms((prev) =>
-      prev
-        .map((room) => {
-          if (room.id !== id) return room;
+const canAddRoom = rooms.every(isCustomRoomComplete);
 
-          if (room.isCustom && room.checked) {
-            return { ...room, checked: false, _remove: true } as any;
-          }
+const handleToggleRoom = (id: string) => {
+  setRooms((prev) => {
+    const checkedCount = prev.filter((r) => r.checked).length;
+    const target = prev.find((r) => r.id === id);
+    if (!target) return prev;
 
-          return { ...room, checked: !room.checked };
-        })
-        .filter((room: any) => !room._remove)
-    );
-  };
+    const nextChecked = !target.checked;
+
+    // ❗ нельзя снять галочку с последней выбранной комнаты
+    if (!nextChecked && target.checked && checkedCount <= 1) {
+      return prev;
+    }
+
+    return prev
+      .map((room) => {
+        if (room.id !== id) return room;
+
+        // кастомную комнату при выключении удаляем
+        if (room.isCustom && room.checked) {
+          return { ...room, checked: false, count: '', _remove: true } as any;
+        }
+
+        // OFF -> очищаем количество
+        if (!nextChecked) {
+          return { ...room, checked: false, count: '' };
+        }
+
+        // ON -> если пусто, ставим 1
+        const nextCount = room.count.trim() === '' ? '1' : room.count;
+        return { ...room, checked: true, count: nextCount };
+      })
+      .filter((room: any) => !room._remove);
+  });
+};
+
+
 
   const handleChangeRoomName = (id: string, roomName: string) => {
     setRooms((prev) => prev.map((room) => (room.id === id ? { ...room, name: roomName } : room)));
   };
 
-  const handleChangeRoomCount = (id: string, count: string) => {
-    setRooms((prev) => prev.map((room) => (room.id === id ? { ...room, count: clampNumeric(count, 0, 10) } : room)));
-  };
+const handleChangeRoomCount = (id: string, text: string) => {
+  const digits = text.replace(/\D/g, '');
 
-  const handleAddRoom = () => {
-    setRooms((prev) => [...prev, { id: createId(), name: '', count: '0', checked: true, isCustom: true }]);
-  };
+  if (digits === '') {
+    setRooms((prev) => {
+      const checkedCount = prev.filter((r) => r.checked).length;
+      const target = prev.find((r) => r.id === id);
+      if (!target) return prev;
+
+      const wouldUncheckLast = target.checked && checkedCount <= 1;
+
+      return prev.map((room) =>
+        room.id === id
+          ? {
+              ...room,
+              count: '',
+              checked: wouldUncheckLast ? true : false, // ❗ последнюю не выключаем
+            }
+          : room
+      );
+    });
+    return;
+  }
+
+  const nextCount = clampNumeric(digits, 1, 10);
+
+  setRooms((prev) =>
+    prev.map((room) =>
+      room.id === id ? { ...room, count: nextCount, checked: true } : room
+    )
+  );
+};
+
+
+const handleAddRoom = () => {
+  if (!canAddRoom) return;
+
+  setRooms((prev) => [
+    ...prev,
+    { id: createId(), name: '', count: '', checked: true, isCustom: true },
+  ]);
+};
+
+
+
 
   const updateMember = (id: string, patch: Partial<HouseholdMember>) => {
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
@@ -466,8 +530,8 @@ export default function SettingsScreen() {
                   </View>
                 ))}
 
-                <Pressable onPress={handleAddRoom} style={styles.addButton}>
-                  <Text style={styles.addPlus}>+</Text>
+                <Pressable onPress={handleAddRoom} style={[styles.addButton, { borderColor: canAddRoom ? Colors.primary : Colors.disabledprimary, }]}>
+                  <Text style={{ fontSize: 24, color: canAddRoom ? Colors.primary : Colors.disabledprimary, }}>+</Text>
                 </Pressable>
               </View>
             )}
@@ -489,8 +553,8 @@ export default function SettingsScreen() {
                   />
                 ))}
 
-                <Pressable onPress={canAddMember ? handleAddMember : undefined} style={[styles.addButton, { opacity: canAddMember ? 1 : 0.4 }]}>
-                  <Text style={styles.addPlus}>+</Text>
+                <Pressable onPress={canAddMember ? handleAddMember : undefined} style={[styles.addButton, { borderColor: canAddMember ? Colors.primary : Colors.disabledprimary, }]}>
+                  <Text style={{ fontSize: 24, color: canAddMember ? Colors.primary : Colors.disabledprimary, }}>+</Text>
                 </Pressable>
               </View>
             )}
@@ -688,14 +752,9 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
     backgroundColor: Colors.white,
-  },
-  addPlus: {
-    fontSize: 24,
-    color: Colors.primary,
   },
 });

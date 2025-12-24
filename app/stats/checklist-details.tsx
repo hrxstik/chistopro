@@ -121,7 +121,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nexa',
   },
   headerTitleBold: {
-    fontWeight: '700',
   },
   topDivider: {
     height: 2,
