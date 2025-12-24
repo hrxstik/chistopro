@@ -3,12 +3,21 @@ import { OnboardingButton } from '@/components/OnboardingButton';
 import { QuestionnaireLayout } from '@/components/QuestionnaireLayout';
 import { RadioButton } from '@/components/RadioButton';
 import { Colors } from '@/constants/colors';
+import { useQuestionnaire } from '@/contexts/QuestionnaireContext';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Text, View } from 'react-native';
 export default function Step2() {
   const router = useRouter();
-  const [profession, setProfession] = useState<string | null>(null);
+  const { data, updateStep2 } = useQuestionnaire();
+  const [profession, setProfession] = useState<string | null>(data.profession || null);
+
+  useEffect(() => {
+    if (profession) {
+      updateStep2(profession);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profession]);
   return (
     <QuestionnaireLayout
     showBack

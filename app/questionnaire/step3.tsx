@@ -3,25 +3,36 @@ import { HouseholdCard } from '@/components/HouseholdCard';
 import { OnboardingButton } from '@/components/OnboardingButton';
 import { QuestionnaireLayout } from '@/components/QuestionnaireLayout';
 import { Colors } from '@/constants/colors';
+import { useQuestionnaire } from '@/contexts/QuestionnaireContext';
 import { HouseholdMember } from '@/types/household';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 
 export default function Step3() {
   const router = useRouter();
+  const { data, updateStep3 } = useQuestionnaire();
   const createId = () => Date.now().toString();
 
-  const [members, setMembers] = useState<HouseholdMember[]>([
-    {
-      id: createId(),
-      name: 'Домочадец 1',
-      gender: null,
-      age: '',
-      profession: '',
-      expanded: true,
-    },
-  ]);
+  const [members, setMembers] = useState<HouseholdMember[]>(
+    data.householdMembers.length > 0
+      ? data.householdMembers
+      : [
+          {
+            id: createId(),
+            name: 'Домочадец 1',
+            gender: null,
+            age: '',
+            profession: '',
+            expanded: true,
+          },
+        ]
+  );
+
+  useEffect(() => {
+    updateStep3(members);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members]);
 
   const scrollRef = useRef<ScrollView | null>(null);
 

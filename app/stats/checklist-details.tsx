@@ -1,6 +1,7 @@
-import { useLocalSearchParams } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -10,26 +11,13 @@ import {
 import { BackButton } from '@/components/BackButton';
 import { TaskTimeInfo } from '@/components/TaskTimeInfo';
 import { Colors } from '@/constants/colors';
+import { checklistStorage } from '@/utils/checklistStorage';
+import { Checklist, TaskStatus } from '@/types/checklist';
+import { formatDate } from '@/utils/checklistGenerator';
 
 import CrossIcon from '@/assets/icons/cross.svg';
 import GrayTickIcon from '@/assets/icons/graytick.svg';
 import LoadingIcon from '@/assets/icons/loading.svg';
-
-type TaskStatus = 'in_progress' | 'done' | 'missed';
-
-type ChecklistTask = {
-  id: string;
-  title: string;
-  minutes: number;
-  status: TaskStatus;
-};
-
-const DEMO_TASKS: ChecklistTask[] = [
-  { id: '1', title: 'Почистить раковину в ванной',       minutes: 4, status: 'in_progress' },
-  { id: '2', title: 'Протереть дверные ручки и выключатели', minutes: 3, status: 'in_progress' },
-  { id: '3', title: 'Помыть пол в гостиной',              minutes: 7, status: 'done' },
-  { id: '4', title: 'Протереть стол на кухне',            minutes: 2, status: 'missed' },
-];
 
 function getStatusIcon(status: TaskStatus) {
   if (status === 'in_progress') return <LoadingIcon width={18} height={18} />;
@@ -44,8 +32,67 @@ function getStatusColor(status: TaskStatus) {
 }
 
 export default function ChecklistDetailsScreen() {
-  const { date } = useLocalSearchParams<{ date?: string }>();
-  const titleDate = date ?? '03.12.25';
+  const { date, checklistId } = useLocalSearchParams<{ date?: string; checklistId?: string }>();
+  const router = useRouter();
+  const [checklist, setChecklist] = useState<Checklist | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadChecklist();
+  }, [date, checklistId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadChecklist();
+    }, [date, checklistId])
+  );
+
+  const loadChecklist = async () => {
+    try {
+      if (checklistId) {
+        const checklists = await checklistStorage.getChecklists();
+        const found = checklists.find(c => c.id === checklistId);
+        setChecklist(found || null);
+      } else if (date) {
+        const found = await checklistStorage.getChecklistByDate(date);
+        setChecklist(found);
+      }
+    } catch (error) {
+      console.error('Error loading checklist:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const titleDate = date ? formatDate(date) : '--.--.--';
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  if (!checklist) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerTopRow}>
+            <BackButton />
+            <Text style={styles.headerTitle}>Чек-лист</Text>
+            <View style={{ width: 32 }} />
+          </View>
+        </View>
+        <View style={styles.topDivider} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: 16, fontFamily: 'Nexa-Reg', color: Colors.primary }}>
+            Чек-лист не найден
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -61,7 +108,7 @@ export default function ChecklistDetailsScreen() {
       </View>
 <View style={styles.topDivider} />
       <FlatList
-        data={DEMO_TASKS}
+        data={checklist.tasks}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

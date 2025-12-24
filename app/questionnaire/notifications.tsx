@@ -10,16 +10,65 @@ import {
 import { OnboardingCloud } from '@/components/OnboardingCloud';
 import { QuestionnaireLayout } from '@/components/QuestionnaireLayout';
 import { Colors } from '@/constants/colors';
+import { useQuestionnaire } from '@/contexts/QuestionnaireContext';
+import { storage } from '@/utils/storage';
+import { UserProfile } from '@/types/profile';
+import { requestNotificationPermissions, scheduleDailyNotification, cancelDailyNotification } from '@/utils/notifications';
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { data, reset } = useQuestionnaire();
+
+  const saveProfile = async (notificationsEnabled: boolean) => {
+    try {
+      const profile: UserProfile = {
+        name: data.name,
+        age: data.age,
+        gender: data.gender,
+        profession: data.profession,
+        householdMembers: data.householdMembers,
+        area: data.area,
+        petsCount: data.petsCount,
+        rooms: data.rooms,
+        notificationsEnabled,
+        tasksDone: 0,
+        checklistRecord: 0,
+        achievements: 0,
+        chubriks: 0,
+        chubrikProgress: 0,
+        chubrikMaxLevel: 1,
+        avatarIndex: 0,
+      };
+      
+      await storage.saveProfile(profile);
+      
+      // Настраиваем или отменяем уведомления в зависимости от выбора пользователя
+      if (notificationsEnabled) {
+        const hasPermission = await requestNotificationPermissions();
+        if (hasPermission) {
+          // Планируем уведомление через час после генерации чеклиста
+          // Игнорируем время когда уведомления были включены
+          await scheduleDailyNotification();
+        }
+      } else {
+        await cancelDailyNotification();
+      }
+      
+      reset(); // Очищаем контекст после сохранения
+      router.push('/tabs');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      // В случае ошибки все равно переходим на главный экран
+      router.push('/tabs');
+    }
+  };
 
   const handleAllow = () => {
-    router.push('/tabs');
+    saveProfile(true);
   };
 
   const handleDeny = () => {
-    router.push('/tabs');
+    saveProfile(false);
   };
 
   return (

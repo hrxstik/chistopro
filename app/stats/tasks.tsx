@@ -1,6 +1,7 @@
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -10,12 +11,14 @@ import {
 import { BackButton } from '@/components/BackButton';
 import { TaskTimeInfo } from '@/components/TaskTimeInfo';
 import { Colors } from '@/constants/colors';
+import { checklistStorage } from '@/utils/checklistStorage';
+import { ChecklistTask, TaskStatus } from '@/types/checklist';
+import { formatDate } from '@/utils/checklistGenerator';
+import { getTodayDateString } from '@/utils/checklistGenerator';
 
 import CrossIcon from '@/assets/icons/cross.svg';
 import GrayTickIcon from '@/assets/icons/graytick.svg';
 import LoadingIcon from '@/assets/icons/loading.svg';
-
-type TaskStatus = 'in_progress' | 'done' | 'overdue';
 
 type HistoryTask = {
   id: string;
@@ -23,51 +26,6 @@ type HistoryTask = {
   date: string;
   status: TaskStatus;
 };
-
-const TASKS: HistoryTask[] = [
-  {
-    id: '1',
-    title: 'Почистить раковину в ванной',
-    date: '03.12.25',
-    status: 'in_progress',
-  },
-  {
-    id: '2',
-    title: 'Протереть дверные ручки и выключатели',
-    date: '03.12.25',
-    status: 'in_progress',
-  },
-  {
-    id: '3',
-    title: 'Помыть пол в гостиной',
-    date: '03.12.25',
-    status: 'done',
-  },
-  {
-    id: '4',
-    title: 'Протереть стол на кухне',
-    date: '03.12.25',
-    status: 'done',
-  },
-  {
-    id: '5',
-    title: 'Прибраться в шкафах в спальне',
-    date: '02.12.25',
-    status: 'done',
-  },
-  {
-    id: '6',
-    title: 'Помыть пол на кухне',
-    date: '02.12.25',
-    status: 'done',
-  },
-  {
-    id: '7',
-    title: 'Пропылесосить в гостиной',
-    date: '02.12.25',
-    status: 'overdue',
-  },
-];
 
 function getStatusIcon(status: TaskStatus) {
   if (status === 'in_progress') {
@@ -87,9 +45,72 @@ function getStatusColor(status: TaskStatus) {
 
 export default function ReceivedTasksScreen() {
   const router = useRouter();
+  const [allTasks, setAllTasks] = useState<HistoryTask[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const completedCount = TASKS.filter((t) => t.status === 'done').length;
-  const missedCount = TASKS.filter((t) => t.status === 'overdue').length;
+  const loadTasks = useCallback(async () => {
+    try {
+      // Статистика учитывает ВСЕ чеклисты (и до пропуска, и после)
+      const checklists = await checklistStorage.getChecklists();
+      const today = getTodayDateString();
+      
+      // Собираем все задачи из всех чеклистов
+      const tasks: HistoryTask[] = [];
+      
+      for (const checklist of checklists) {
+        const formattedDate = formatDate(checklist.date);
+        
+        for (const task of checklist.tasks) {
+          // Для текущего дня задачи могут быть "in_progress", для старых - только "done" или "missed"
+          let status: TaskStatus = task.status;
+          if (checklist.date < today && task.status === 'in_progress') {
+            status = 'missed';
+          }
+          
+          tasks.push({
+            id: `${checklist.id}-${task.id}`,
+            title: task.title,
+            date: formattedDate,
+            status,
+          });
+        }
+      }
+      
+      // Сортируем по дате (новые первыми)
+      tasks.sort((a, b) => {
+        const dateA = new Date(a.date.split('.').reverse().join('-')).getTime();
+        const dateB = new Date(b.date.split('.').reverse().join('-')).getTime();
+        return dateB - dateA;
+      });
+      
+      setAllTasks(tasks);
+    } catch (error) {
+      console.error('Error loading tasks:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTasks();
+    }, [loadTasks])
+  );
+
+  const completedCount = allTasks.filter((t) => t.status === 'done').length;
+  const missedCount = allTasks.filter((t) => t.status === 'missed').length;
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -115,7 +136,7 @@ export default function ReceivedTasksScreen() {
 
       {/* список задач */}
       <FlatList
-        data={TASKS}
+        data={allTasks}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -136,7 +157,7 @@ export default function ReceivedTasksScreen() {
                     styles.taskTitle,
                     item.status === 'in_progress' && { color },
                     item.status === 'done' && { color },
-                    item.status === 'overdue' && { color },
+                    item.status === 'missed' && { color },
                   ]}
                 >
                   {item.title}

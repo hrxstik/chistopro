@@ -39,7 +39,15 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#E6F4FE",
+          "sounds": []
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

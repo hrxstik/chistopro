@@ -1,37 +1,23 @@
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Checkbox } from '@/components/Checkbox';
 import { CloudSmall } from '@/components/CloudSmall';
 import { OnboardingButton } from '@/components/OnboardingButton';
 import { QuestionnaireLayout } from '@/components/QuestionnaireLayout';
 import { Colors } from '@/constants/colors';
-
-type Room = {
-  id: string;
-  name: string;
-  count: string;
-  checked: boolean;
-  isCustom: boolean;
-};
+import { useQuestionnaire } from '@/contexts/QuestionnaireContext';
+import { Room } from '@/types/profile';
 
 const DEFAULT_ROOMS: Room[] = [
-  { id: '1', name: 'Спальня',   count: '', checked: false, isCustom: false },
-  { id: '2', name: 'Кухня',     count: '', checked: false, isCustom: false },
-  { id: '3', name: 'Ванная',    count: '', checked: false, isCustom: false },
-  { id: '4', name: 'Кабинет',   count: '', checked: false, isCustom: false },
-  { id: '5', name: 'Гостиная',  count: '', checked: false, isCustom: false },
+  { id: '1', name: 'Спальня', count: '', checked: false, isCustom: false },
+  { id: '2', name: 'Кухня', count: '', checked: false, isCustom: false },
+  { id: '3', name: 'Ванная', count: '', checked: false, isCustom: false },
+  { id: '4', name: 'Кабинет', count: '', checked: false, isCustom: false },
+  { id: '5', name: 'Гостиная', count: '', checked: false, isCustom: false },
   { id: '6', name: 'Обеденная', count: '', checked: false, isCustom: false },
-  { id: '7', name: 'Подвал',    count: '', checked: false, isCustom: false },
+  { id: '7', name: 'Подвал', count: '', checked: false, isCustom: false },
 ];
 
 // утилита для числовых полей
@@ -46,113 +32,119 @@ const clampNumeric = (text: string, min?: number, max?: number) => {
 
 export default function Step4() {
   const router = useRouter();
+  const { data, updateStep4 } = useQuestionnaire();
   const scrollRef = useRef<ScrollView | null>(null);
 
-  const [area, setArea] = useState('');
-  const [petsCount, setPetsCount] = useState('');
-  const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
+  const [area, setArea] = useState(data.area);
+  const [petsCount, setPetsCount] = useState(data.petsCount);
+  const [rooms, setRooms] = useState<Room[]>(
+    data.rooms.length > 0 ? data.rooms : DEFAULT_ROOMS
+  );
+
+  useEffect(() => {
+    updateStep4({ area, petsCount, rooms });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [area, petsCount, rooms]);
 
   const createId = () => Date.now().toString();
 
-const handleToggleRoom = (id: string) => {
-  setRooms((prev) =>
-    prev
-      .map((room) => {
-        if (room.id !== id) return room;
+  const handleToggleRoom = (id: string) => {
+    setRooms((prev) =>
+      prev
+        .map((room) => {
+          if (room.id !== id) return room;
 
-        const nextChecked = !room.checked;
+          const nextChecked = !room.checked;
 
-        // кастомную комнату при выключении удаляем
-        if (room.isCustom && room.checked) {
-          return { ...room, checked: false, count: '', _remove: true } as any;
-        }
+          // кастомную комнату при выключении удаляем
+          if (room.isCustom && room.checked) {
+            return { ...room, checked: false, count: '', _remove: true } as any;
+          }
 
-        // сняли чекбокс -> очищаем количество
-        if (!nextChecked) {
-          return { ...room, checked: false, count: '' };
-        }
+          // сняли чекбокс -> очищаем количество
+          if (!nextChecked) {
+            return { ...room, checked: false, count: '' };
+          }
 
-        // включили чекбокс -> если пусто, ставим 1
-        const nextCount = room.count.trim() === '' ? '1' : room.count;
+          // включили чекбокс -> если пусто, ставим 1
+          const nextCount = room.count.trim() === '' ? '1' : room.count;
 
-        return { ...room, checked: true, count: nextCount };
-      })
-      .filter((room: any) => !room._remove)
-  );
-};
+          return { ...room, checked: true, count: nextCount };
+        })
+        .filter((room: any) => !room._remove),
+    );
+  };
 
   const handleChangeRoomName = (id: string, name: string) => {
     setRooms((prev) =>
       prev.map((room) =>
         // на всякий случай не трогаем предустановленные
-        room.id === id && room.isCustom ? { ...room, name } : room
-      )
+        room.id === id && room.isCustom ? { ...room, name } : room,
+      ),
     );
   };
 
-const handleChangeRoomCount = (id: string, text: string) => {
-  // разрешаем очистку поля
-  const digits = text.replace(/\D/g, '');
-  if (digits === '') {
+  const handleChangeRoomCount = (id: string, text: string) => {
+    // разрешаем очистку поля
+    const digits = text.replace(/\D/g, '');
+    if (digits === '') {
+      setRooms((prev) =>
+        prev.map((room) => (room.id === id ? { ...room, count: '', checked: false } : room)),
+      );
+      return;
+    }
+
+    // 0 вводить нельзя -> минимум 1
+    const nextCount = clampNumeric(digits, 1, 10);
+
     setRooms((prev) =>
       prev.map((room) =>
-        room.id === id ? { ...room, count: '', checked: false } : room
-      )
+        room.id === id
+          ? {
+              ...room,
+              count: nextCount,
+              // ввели 1–10 -> автоматически включаем чекбокс
+              checked: true,
+            }
+          : room,
+      ),
     );
-    return;
-  }
+  };
 
-  // 0 вводить нельзя -> минимум 1
-  const nextCount = clampNumeric(digits, 1, 10);
+  const handleAddRoom = () => {
+    if (!canAddRoom) return;
 
-  setRooms((prev) =>
-    prev.map((room) =>
-      room.id === id
-        ? {
-            ...room,
-            count: nextCount,
-            // ввели 1–10 -> автоматически включаем чекбокс
-            checked: true,
-          }
-        : room
-    )
-  );
-};
+    setRooms((prev) => [
+      ...prev,
+      {
+        id: createId(),
+        name: '',
+        count: '',
+        checked: true,
+        isCustom: true,
+      },
+    ]);
 
-const handleAddRoom = () => {
-  if (!canAddRoom) return;
-
-  setRooms((prev) => [
-    ...prev,
-    {
-      id: createId(),
-      name: '',
-      count: '',
-      checked: true,
-      isCustom: true,
-    },
-  ]);
-
-  requestAnimationFrame(() => {
-    scrollRef.current?.scrollToEnd({ animated: true });
-  });
-};
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  };
 
   const handleChangeArea = (text: string) => {
-    setArea(clampNumeric(text, 1)); // минимум 1
+    // Ограничение: минимум 1, максимум 10,000
+    setArea(clampNumeric(text, 1, 10000));
   };
 
   const handleChangePets = (text: string) => {
-    setPetsCount(clampNumeric(text, 0)); // минимум 0
+    // Ограничение: минимум 0, максимум 100
+    setPetsCount(clampNumeric(text, 0, 100));
   };
 
   // хотя бы одна выбранная комната
   const hasSelectedRoom = rooms.some((r) => r.checked);
 
   // у всех выбранных комнат есть название
-  const allSelectedHaveName = rooms.every(
-    (r) => !r.checked || r.name.trim() !== ''
-  );
+  const allSelectedHaveName = rooms.every((r) => !r.checked || r.name.trim() !== '');
 
   // у всех выбранных комнат валидное количество 1–10
   const allSelectedHaveValidCount = rooms.every((r) => {
@@ -161,11 +153,13 @@ const handleAddRoom = () => {
     const n = parseInt(r.count, 10);
     return !isNaN(n) && n >= 1 && n <= 10;
   });
-const isCustomRoomComplete = (r: Room) =>
-  !r.isCustom || (r.name.trim() !== '' && r.count.trim() !== '');
 
-// можно ли добавлять новую комнату
-const canAddRoom = rooms.every(isCustomRoomComplete);
+  const isCustomRoomComplete = (r: Room) =>
+    !r.isCustom || (r.name.trim() !== '' && r.count.trim() !== '');
+
+  // можно ли добавлять новую комнату
+  const canAddRoom = rooms.every(isCustomRoomComplete);
+
   const isValid =
     area.trim() !== '' &&
     petsCount.trim() !== '' &&
@@ -193,14 +187,12 @@ const canAddRoom = rooms.every(isCustomRoomComplete);
             router.push('/questionnaire/notifications');
           }}
         />
-      }
-    >
+      }>
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="always"
-        keyboardDismissMode="on-drag"
-      >
+        keyboardDismissMode="on-drag">
         {/* Площадь дома */}
         <Text style={styles.label}>Площадь дома:</Text>
         <View style={styles.areaWrapper}>
@@ -230,19 +222,14 @@ const canAddRoom = rooms.every(isCustomRoomComplete);
 
         {rooms.map((room) => (
           <View key={room.id} style={styles.roomRow}>
-            <Checkbox
-              checked={room.checked}
-              onToggle={() => handleToggleRoom(room.id)}
-            />
+            <Checkbox checked={room.checked} onToggle={() => handleToggleRoom(room.id)} />
 
             {room.isCustom ? (
               // редактируемое поле для кастомных комнат
               <TextInput
                 style={styles.roomNameInput}
                 value={room.name}
-                onChangeText={(text) =>
-                  handleChangeRoomName(room.id, text)
-                }
+                onChangeText={(text) => handleChangeRoomName(room.id, text)}
                 placeholder="Название комнаты"
               />
             ) : (
@@ -255,17 +242,28 @@ const canAddRoom = rooms.every(isCustomRoomComplete);
             <TextInput
               style={styles.roomCountInput}
               value={room.count}
-              onChangeText={(text) =>
-                handleChangeRoomCount(room.id, text)
-              }
+              onChangeText={(text) => handleChangeRoomCount(room.id, text)}
               keyboardType="numeric"
             />
           </View>
         ))}
 
         {/* Кнопка добавить комнату */}
-        <Pressable onPress={handleAddRoom} style={[styles.addButton, { borderColor: canAddRoom ? Colors.primary : Colors.disabledprimary, }]}>
-          <Text style={{ fontSize: 24, color: canAddRoom ? Colors.primary : Colors.disabledprimary, }}>+</Text>
+        <Pressable
+          onPress={handleAddRoom}
+          style={[
+            styles.addButton,
+            {
+              borderColor: canAddRoom ? Colors.primary : Colors.disabledprimary,
+            },
+          ]}>
+          <Text
+            style={{
+              fontSize: 24,
+              color: canAddRoom ? Colors.primary : Colors.disabledprimary,
+            }}>
+            +
+          </Text>
         </Pressable>
       </ScrollView>
     </QuestionnaireLayout>
@@ -291,11 +289,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     fontSize: 15,
     fontFamily: 'Nexa-Reg',
-
   },
 
   /* Площадь дома с "м²" внутри поля */
-
   areaWrapper: {
     height: 44,
     borderWidth: 1.5,
@@ -312,7 +308,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Nexa-Reg',
     paddingVertical: 0,
-
   },
   areaSuffix: {
     marginLeft: 8,
@@ -322,7 +317,6 @@ const styles = StyleSheet.create({
   },
 
   /* Комнаты */
-
   roomsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -365,7 +359,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Nexa-Reg',
     marginLeft: 8,
     textAlign: 'center',
-
   },
 
   addButton: {

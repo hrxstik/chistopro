@@ -10,9 +10,12 @@ import Profile5 from '@/assets/icons/profiles/profile5.svg';
 import Profile6 from '@/assets/icons/profiles/profile6.svg';
 import { AdBanner } from '@/components/AdBanner';
 import { Colors } from '@/constants/colors';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useProfile } from '@/hooks/useProfile';
+import { useProfileStats } from '@/hooks/useProfileStats';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Pressable,
   ScrollView,
@@ -23,11 +26,6 @@ import {
 
 const premiumCloud = require('@/assets/images/premium.png');
 const AVATAR_COMPONENTS = [Profile1, Profile2, Profile3, Profile4, Profile5, Profile6];
-const USER_NAME = 'Ирина';
-const TASKS_DONE = 60;
-const CHECKLIST_RECORD = 15;
-const ACHIEVEMENTS = 1;
-const CHUBRIKS = 0;
 
 type StatCardProps = {
   icon: React.ReactNode;
@@ -57,6 +55,46 @@ function StatCard({ icon, value, label, onPress }: StatCardProps) {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { profile, loading: profileLoading, loadProfile } = useProfile();
+  const { stats, loading: statsLoading, reload: reloadStats } = useProfileStats();
+
+  // Перезагружаем профиль и статистику при фокусе на экране
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+      reloadStats();
+    }, [loadProfile, reloadStats])
+  );
+
+  if (profileLoading || statsLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.container}>
+        <AdBanner/>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.emptyText}>Профиль не найден</Text>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  const AvatarComponent = AVATAR_COMPONENTS[profile.avatarIndex] || Profile1;
+  const userName = profile.name || 'Пользователь';
+  const tasksDone = stats.tasksDone;
+  const checklistRecord = stats.checklistRecord;
+  const achievements = stats.achievements;
+  const chubriks = stats.chubriks;
+
   return (
     <View style={styles.container}>
       <AdBanner/>
@@ -67,34 +105,34 @@ export default function ProfileScreen() {
       >
         {/* аватар и имя */}
         <View style={styles.headerBlock}>
-            <Profile1/>
-          <Text style={styles.userName}>{USER_NAME}</Text>
+          <AvatarComponent/>
+          <Text style={styles.userName}>{userName}</Text>
         </View>
 
         {/* сетка статистики 2x2 */}
         <View style={styles.statsGrid}>
           <StatCard
             icon={<GreenTick width={38} height={38} />}
-            value={TASKS_DONE}
+            value={tasksDone}
             label={'выполнено\nзадач'}
             onPress={() => router.push('/stats/tasks')}
           />
           <StatCard
             icon={<MainIcon width={38} height={38} />}
-            value={CHECKLIST_RECORD}
+            value={checklistRecord}
             label={'рекорд закрытых\nчек-листов'}
             onPress={() => router.push('/stats/checklists')}
           />
           
           <StatCard
             icon={<CupIcon width={38} height={38} />}
-            value={ACHIEVEMENTS}
+            value={achievements}
             label={'достижений\nполучено'}
             onPress={() => router.push('/stats/achievements')}
           />
           <StatCard
             icon={<ChubrikHiddenIcon width={38} height={38} />}
-            value={CHUBRIKS}
+            value={chubriks}
             label={'чубриков\nочищено'}
             onPress={() => router.push('/stats/terrarium')}
           />
@@ -114,7 +152,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    fontFamily: 'Nexa',
+    color: Colors.primary,
+    textAlign: 'center',
+    marginTop: 50,
+  },
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 24,

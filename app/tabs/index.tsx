@@ -1,6 +1,7 @@
 // app/(tabs)/index.tsx
-import { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   StyleSheet,
@@ -13,81 +14,60 @@ import { AdBanner } from '@/components/AdBanner';
 import { Checkbox } from '@/components/Checkbox';
 import { TaskTimeInfo } from '@/components/TaskTimeInfo';
 import { Colors } from '@/constants/colors';
-
-type Task = {
-  id: string;
-  title: string;
-  time: string;
-  completed: boolean;
-};
+import { useChecklist } from '@/hooks/useChecklist';
+import { useProfile } from '@/hooks/useProfile';
+import { useChubrikProgress } from '@/hooks/useChubrikProgress';
+import { checklistStorage } from '@/utils/checklistStorage';
 
 const TOTAL_DAYS = 28;
-const COMPLETED_DAYS = 1;
 
-const INITIAL_TASKS: Task[] = [
-  {
-    id: '1',
-    title: 'Почистить раковину в ванной',
-    time: '4 мин',
-    completed: false,
-  },
-  {
-    id: '2',
-    title: 'Протереть дверные ручки и выключатели',
-    time: '3 мин',
-    completed: false,
-  },
-  {
-    id: '3',
-    title: 'Помыть пол в гостиной',
-    time: '7 мин',
-    completed: false,
-  },
-  {
-    id: '4',
-    title: 'Протереть стол на кухне',
-    time: '2 мин',
-    completed: false,
-  },
-];
-
-function getMascotSource(day: number) {
-  if (day <= 6) {
+function getMascotSource(progress: number) {
+  if (progress <= 6) {
     return require('@/assets/images/chubrik1_dirty1.png');
   }
-  if (day <= 13) {
+  if (progress <= 13) {
     return require('@/assets/images/chubrik1_dirty2.png');
   }
-  if (day <= 20) {
+  if (progress <= 20) {
     return require('@/assets/images/chubrik1_dirty3.png');
   }
   return require('@/assets/images/chubrik1_clean.png');
 }
 
-// 5 фаз / уровней
-function getLevel(day: number) {
-  if (day < 7) return "1 уровень";      // 0–7
-  if (day < 14) return "2 уровень";     // 8–14
-  if (day < 21) return "3 уровень";     // 15–21
-  if (day < 28) return "4 уровень";     // 22–27
-  return "Привычка сформирована";                    // 28 подарок
+// Уровни чубрика на основе прогресса
+function getLevelText(progress: number, level: number): string {
+  if (progress >= 28) {
+    return "Привычка сформирована";
+  }
+  return `${level} уровень`;
 }
 
 export default function HomeScreen() {
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const { profile } = useProfile();
+  const rooms = profile?.rooms || [];
+  const { currentChecklist, loading, toggleTask } = useChecklist(rooms);
+  const { progress: chubrikProgress, currentLevel, loading: progressLoading, reload: reloadProgress } = useChubrikProgress();
 
-  const completedDays = COMPLETED_DAYS;
-  const progress = Math.max(0, Math.min(1, completedDays / TOTAL_DAYS));
-  const level = getLevel(completedDays);
-  const mascotSource = getMascotSource(completedDays);
+  // Обновляем прогресс при изменении чеклиста
+  useEffect(() => {
+    if (currentChecklist) {
+      reloadProgress();
+    }
+  }, [currentChecklist, reloadProgress]);
 
-  const toggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, completed: !t.completed } : t
-      )
+  const progress = Math.max(0, Math.min(1, chubrikProgress / TOTAL_DAYS));
+  const level = getLevelText(chubrikProgress, currentLevel);
+  const mascotSource = getMascotSource(chubrikProgress);
+
+  if (loading || progressLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
     );
-  };
+  }
+
+  const tasks = currentChecklist?.tasks || [];
 
   return (
     <View style={styles.container}>
@@ -118,7 +98,7 @@ export default function HomeScreen() {
                   />
                   <View style={styles.progressLabelWrapper}>
                     <Text style={styles.progressLabel}>
-                      {completedDays}/{TOTAL_DAYS}
+                      {chubrikProgress}/{TOTAL_DAYS}
                     </Text>
                   </View>
                 </View>
@@ -150,26 +130,31 @@ export default function HomeScreen() {
             </View>
 
             <Text style={styles.tasksTitle}>Задачи на сегодня:</Text>
+            {tasks.length === 0 && (
+              <Text style={styles.emptyTasksText}>
+                На сегодня задач нет. Проверьте настройки комнат в профиле.
+              </Text>
+            )}
           </>
         }
         renderItem={({ item }) => (
           <View style={styles.taskRow}>
             <View style={styles.taskLeft}>
               <Checkbox
-                checked={item.completed}
+                checked={item.status === 'done'}
                 onToggle={() => toggleTask(item.id)}
               />
               <Text
                 style={[
                   styles.taskTitle,
-                  item.completed && styles.taskTitleCompleted,
+                  item.status === 'done' && styles.taskTitleCompleted,
                 ]}
               >
                 {item.title}
               </Text>
             </View>
 
-            <TaskTimeInfo text={item.time} />
+            <TaskTimeInfo text={`${item.minutes} мин`} />
           </View>
         )}
         contentContainerStyle={styles.listContent}
@@ -309,6 +294,14 @@ const styles = StyleSheet.create({
   taskTitleCompleted: {
     textDecorationLine: 'line-through',
     color: Colors.primary, 
+  },
+  emptyTasksText: {
+    fontSize: 15,
+    fontFamily: 'Nexa-Reg',
+    color: Colors.disabled,
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 8,
   },
 
 });

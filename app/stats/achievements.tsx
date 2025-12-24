@@ -1,7 +1,7 @@
 // app/stats/achievements.tsx
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useMemo } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 
 import BrushFilled from '@/assets/icons/achievements/brush1.svg';
 import BrushOutline from '@/assets/icons/achievements/brush2.svg';
@@ -15,6 +15,7 @@ import SpongeOutline from '@/assets/icons/achievements/sponge2.svg';
 import { AchievementCard } from '@/components/AchievementCard';
 import { BackButton } from '@/components/BackButton';
 import { Colors } from '@/constants/colors';
+import { useAchievements } from '@/hooks/useAchievements';
 
 type Achievement = {
   id: string;
@@ -24,105 +25,6 @@ type Achievement = {
   target: number;
   iconType: 'care' | 'streak' | 'collector' | 'offender';
 };
-// надо передавать в порядке выполнения - от нового к старому
-const ACHIEVEMENTS: Achievement[] = [
-  {
-    id: 'care1',
-    title: 'Ухажёр за чубриком I',
-    description: 'Очистить чубрика до 2 уровня',
-    current: 2,
-    target: 2,
-    iconType: 'care',
-  },
-  {
-    id: 'streak1',
-    title: 'Упорный I',
-    description: 'Выполнить 7 чек-листов подряд',
-    current: 7,
-    target: 7,
-    iconType: 'streak',
-  },
-  {
-    id: 'care2',
-    title: 'Ухажёр за чубриком II',
-    description: 'Очистить чубрика до 3 уровня',
-    current: 3,
-    target: 3,
-    iconType: 'care',
-  },
-  {
-    id: 'care3',
-    title: 'Ухажёр за чубриком III',
-    description: 'Очистить чубрика до 4 уровня',
-    current: 3,
-    target: 4,
-    iconType: 'care',
-  },
-  {
-    id: 'streak2',
-    title: 'Упорный II',
-    description: 'Выполнить 28 чек-листов подряд',
-    current: 15,
-    target: 28,
-    iconType: 'streak',
-  },
-  {
-    id: 'streak3',
-    title: 'Упорный III',
-    description: 'Выполнить 90 чек-листов подряд',
-    current: 15,
-    target: 90,
-    iconType: 'streak',
-  },
-  {
-    id: 'collector1',
-    title: 'Коллекционер чубриков I',
-    description: 'Очистить своего 1 чубрика',
-    current: 0,
-    target: 1,
-    iconType: 'collector',
-  },
-  {
-    id: 'collector2',
-    title: 'Коллекционер чубриков II',
-    description: 'Очистить 3 чубрика',
-    current: 0,
-    target: 3,
-    iconType: 'collector',
-  },
-  {
-    id: 'collector3',
-    title: 'Коллекционер чубриков III',
-    description: 'Очистить 5 чубриков',
-    current: 0,
-    target: 5,
-    iconType: 'collector',
-  },
-  {
-    id: 'offender1',
-    title: 'Обидчик чубриков I',
-    description: 'Заставить уйти 10 чубриков',
-    current: 0,
-    target: 10,
-    iconType: 'offender',
-  },
-  {
-    id: 'offender2',
-    title: 'Обидчик чубриков II',
-    description: 'Заставить уйти 20 чубриков',
-    current: 0,
-    target: 20,
-    iconType: 'offender',
-  },
-  {
-    id: 'offender3',
-    title: 'Обидчик чубриков III',
-    description: 'Заставить уйти 30 чубриков',
-    current: 0,
-    target: 30,
-    iconType: 'offender',
-  },
-];
 
 function renderIcon(iconType: Achievement['iconType'], isCompleted: boolean) {
   const sizeProps = { width: 41, height: 41 };
@@ -141,12 +43,143 @@ function renderIcon(iconType: Achievement['iconType'], isCompleted: boolean) {
 }
 
 export default function AchievementsScreen() {
-  const router = useRouter();
-  const sorted = React.useMemo(() => {
-    const completed = ACHIEVEMENTS.filter(a => a.current >= a.target);
-    const notCompleted = ACHIEVEMENTS.filter(a => a.current < a.target);
+  const { metrics, loading, reload } = useAchievements();
+
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
+
+  // Генерируем достижения на основе реальных метрик
+  const ACHIEVEMENTS: Achievement[] = useMemo(() => [
+    {
+      id: 'care1',
+      title: 'Ухажёр за чубриком I',
+      description: 'Очистить чубрика до 2 уровня',
+      current: Math.min(metrics.maxLevel, 2),
+      target: 2,
+      iconType: 'care',
+    },
+    {
+      id: 'care2',
+      title: 'Ухажёр за чубриком II',
+      description: 'Очистить чубрика до 3 уровня',
+      current: Math.min(metrics.maxLevel, 3),
+      target: 3,
+      iconType: 'care',
+    },
+    {
+      id: 'care3',
+      title: 'Ухажёр за чубриком III',
+      description: 'Очистить чубрика до 4 уровня',
+      current: Math.min(metrics.maxLevel, 4),
+      target: 4,
+      iconType: 'care',
+    },
+    {
+      id: 'care4',
+      title: 'Ухажёр за чубриком IV',
+      description: 'Очистить чубрика до 5 уровня',
+      current: Math.min(metrics.maxLevel, 5),
+      target: 5,
+      iconType: 'care',
+    },
+    {
+      id: 'streak1',
+      title: 'Упорный I',
+      description: 'Выполнить 7 чек-листов подряд',
+      current: Math.min(metrics.bestStreak, 7),
+      target: 7,
+      iconType: 'streak',
+    },
+    {
+      id: 'streak2',
+      title: 'Упорный II',
+      description: 'Выполнить 28 чек-листов подряд',
+      current: Math.min(metrics.bestStreak, 28),
+      target: 28,
+      iconType: 'streak',
+    },
+    {
+      id: 'streak3',
+      title: 'Упорный III',
+      description: 'Выполнить 90 чек-листов подряд',
+      current: Math.min(metrics.bestStreak, 90),
+      target: 90,
+      iconType: 'streak',
+    },
+    {
+      id: 'collector1',
+      title: 'Коллекционер чубриков I',
+      description: 'Очистить своего 1 чубрика',
+      current: Math.min(metrics.cleanedChubriks, 1),
+      target: 1,
+      iconType: 'collector',
+    },
+    {
+      id: 'collector2',
+      title: 'Коллекционер чубриков II',
+      description: 'Очистить 3 чубрика',
+      current: Math.min(metrics.cleanedChubriks, 3),
+      target: 3,
+      iconType: 'collector',
+    },
+    {
+      id: 'collector3',
+      title: 'Коллекционер чубриков III',
+      description: 'Очистить 5 чубриков',
+      current: Math.min(metrics.cleanedChubriks, 5),
+      target: 5,
+      iconType: 'collector',
+    },
+    {
+      id: 'collector4',
+      title: 'Коллекционер чубриков IV',
+      description: 'Очистить 10 чубриков',
+      current: Math.min(metrics.cleanedChubriks, 10),
+      target: 10,
+      iconType: 'collector',
+    },
+    {
+      id: 'offender1',
+      title: 'Обидчик чубриков I',
+      description: 'Заставить уйти 10 чубриков',
+      current: Math.min(metrics.leftChubriks, 10),
+      target: 10,
+      iconType: 'offender',
+    },
+    {
+      id: 'offender2',
+      title: 'Обидчик чубриков II',
+      description: 'Заставить уйти 20 чубриков',
+      current: Math.min(metrics.leftChubriks, 20),
+      target: 20,
+      iconType: 'offender',
+    },
+    {
+      id: 'offender3',
+      title: 'Обидчик чубриков III',
+      description: 'Заставить уйти 30 чубриков',
+      current: Math.min(metrics.leftChubriks, 30),
+      target: 30,
+      iconType: 'offender',
+    },
+  ], [metrics]);
+
+  const sorted = useMemo(() => {
+    const completed = ACHIEVEMENTS.filter((a) => a.current >= a.target);
+    const notCompleted = ACHIEVEMENTS.filter((a) => a.current < a.target);
     return [...completed, ...notCompleted];
-  }, []);
+  }, [ACHIEVEMENTS]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

@@ -5,20 +5,26 @@ import { QuestionnaireLayout } from '@/components/QuestionnaireLayout';
 import { RadioButton } from '@/components/RadioButton';
 import { SelectField } from '@/components/SelectField';
 import { Colors } from '@/constants/colors';
+import { useQuestionnaire } from '@/contexts/QuestionnaireContext';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Text, View } from 'react-native';
 export default function Step1() {
   const router = useRouter();
-  const [gender, setGender] = useState<'male' | 'female' | null>(null);
-  const [timezone, setTimezone] = useState('');
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
+  const { data, updateStep1 } = useQuestionnaire();
+  const [gender, setGender] = useState<'male' | 'female' | null>(data.gender);
+  const [name, setName] = useState(data.name);
+  const [age, setAge] = useState(data.age);
+
+  useEffect(() => {
+    updateStep1({ name, age, gender });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, age, gender]);
+
   const isValid =
   name.trim() !== '' &&
   age.trim() !== '' &&
-  gender !== null &&
-  timezone !== '';
+  gender !== null;
 
   return (
     <QuestionnaireLayout
@@ -69,18 +75,6 @@ export default function Step1() {
   onPress={() => setGender('female')}
   borderColor={Colors.red}
 />
-      <SelectField
-  label="Часовой пояс:"
-  value={timezone}
-  onChange={setTimezone}
-  options={[
-    'Москва (GMT +3)',
-    'Калининград (GMT +2)',
-    'Самара (GMT +4)',
-    'Екатеринбург (GMT +5)',
-  ]}
-/>
-
 
     </QuestionnaireLayout>
   );

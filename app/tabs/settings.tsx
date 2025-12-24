@@ -13,6 +13,7 @@ import {
   UIManager,
   View,
   findNodeHandle,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -22,6 +23,10 @@ import { InputField } from '@/components/InputField';
 import { RadioButton } from '@/components/RadioButton';
 import { SelectField } from '@/components/SelectField';
 import { Colors } from '@/constants/colors';
+import { useProfile } from '@/hooks/useProfile';
+import { Room } from '@/types/profile';
+import { HouseholdMember } from '@/types/household';
+import { scheduleDailyNotification, cancelDailyNotification, requestNotificationPermissions, sendTestNotification } from '@/utils/notifications';
 
 // аватары профиля
 import Profile1 from '@/assets/icons/profiles/profile.svg';
@@ -33,47 +38,17 @@ import Profile6 from '@/assets/icons/profiles/profile6.svg';
 
 // домочадцы
 import HouseholdCard from '@/components/HouseholdCard';
-import { HouseholdMember } from '@/types/household';
 
 type Gender = 'male' | 'female' | null;
 
-type Room = {
-  id: string;
-  name: string;
-  count: string;
-  checked: boolean;
-  isCustom: boolean;
-};
-
 const DEFAULT_ROOMS: Room[] = [
-  { id: '1', name: 'Спальня', count: '1', checked: true, isCustom: false },
-  { id: '2', name: 'Кухня', count: '1', checked: true, isCustom: false },
-  { id: '3', name: 'Ванная', count: '1', checked: true, isCustom: false },
+  { id: '1', name: 'Спальня', count: '', checked: false, isCustom: false },
+  { id: '2', name: 'Кухня', count: '', checked: false, isCustom: false },
+  { id: '3', name: 'Ванная', count: '', checked: false, isCustom: false },
   { id: '4', name: 'Кабинет', count: '', checked: false, isCustom: false },
-  { id: '5', name: 'Гостиная', count: '1', checked: true, isCustom: false },
+  { id: '5', name: 'Гостиная', count: '', checked: false, isCustom: false },
   { id: '6', name: 'Обеденная', count: '', checked: false, isCustom: false },
   { id: '7', name: 'Подвал', count: '', checked: false, isCustom: false },
-  { id: '8', name: 'Тренажёрный зал', count: '1', checked: true, isCustom: true },
-];
-
-
-const DEFAULT_MEMBERS: HouseholdMember[] = [
-  {
-    id: 'h1',
-    name: 'Ирина',
-    age: '23',
-    gender: 'female',
-    profession: 'Студент',
-    expanded: false,
-  },
-  {
-    id: 'h2',
-    name: 'Сергей',
-    age: '30',
-    gender: 'male',
-    profession: 'Офисный работник',
-    expanded: false,
-  },
 ];
 
 const clampNumeric = (text: string, min?: number, max?: number) => {
@@ -86,8 +61,6 @@ const clampNumeric = (text: string, min?: number, max?: number) => {
   }
   return String(num);
 };
-
-const TIMEZONES = ['Москва (GMT +3)', 'Калининград (GMT +2)', 'Самара (GMT +4)', 'Екатеринбург (GMT +5)'];
 
 const PROFESSIONS = [
   'Безработный',
@@ -103,6 +76,7 @@ const AVATAR_COMPONENTS = [Profile1, Profile2, Profile3, Profile4, Profile5, Pro
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { profile, loading, updateProfile } = useProfile();
 
   const scrollRef = useRef<ScrollView>(null);
   const scrollYRef = useRef(0);
@@ -197,19 +171,42 @@ export default function SettingsScreen() {
   const [selectedAvatarIndex, setSelectedAvatarIndex] = useState(0);
 
   // личная информация
-  const [name, setName] = useState('Ирина');
-  const [gender, setGender] = useState<Gender>('female');
-  const [age, setAge] = useState('23');
-  const [timezone, setTimezone] = useState(TIMEZONES[0]);
-  const [profession, setProfession] = useState(PROFESSIONS[1]);
+  const [name, setName] = useState('');
+  const [gender, setGender] = useState<Gender>(null);
+  const [age, setAge] = useState('');
+  const [profession, setProfession] = useState('');
 
   // дом
-  const [area, setArea] = useState('63');
-  const [petsCount, setPetsCount] = useState('0');
+  const [area, setArea] = useState('');
+  const [petsCount, setPetsCount] = useState('');
   const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
 
   // домочадцы
-  const [members, setMembers] = useState<HouseholdMember[]>(DEFAULT_MEMBERS);
+  const [members, setMembers] = useState<HouseholdMember[]>([]);
+
+  // Загрузка данных из профиля
+  useEffect(() => {
+    if (profile) {
+      setSelectedAvatarIndex(profile.avatarIndex || 0);
+      setName(profile.name || '');
+      setGender(profile.gender);
+      setAge(profile.age || '');
+      setProfession(profile.profession || '');
+      setArea(profile.area || '');
+      setPetsCount(profile.petsCount || '');
+      setRooms(profile.rooms && profile.rooms.length > 0 ? profile.rooms : DEFAULT_ROOMS);
+      setMembers(profile.householdMembers || []);
+      setNotificationsEnabled(profile.notificationsEnabled || false);
+    }
+  }, [profile]);
+
+  // Сохранение аватарки
+  const handleAvatarChange = useCallback(async (index: number) => {
+    setSelectedAvatarIndex(index);
+    if (profile) {
+      await updateProfile({ avatarIndex: index });
+    }
+  }, [profile, updateProfile]);
   const isMemberComplete = (m: HouseholdMember) => m.gender !== null && m.age.trim() !== '' && m.profession !== '';
   const canAddMember = members.length === 0 || members.every(isMemberComplete);
 
@@ -217,18 +214,65 @@ export default function SettingsScreen() {
   const [personalOpen, setPersonalOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
   const [householdOpen, setHouseholdOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  
+  // Уведомления
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const createId = () => Date.now().toString();
 
-  const handleChangeAge = (text: string) => setAge(clampNumeric(text, 0, 100));
-  const handleChangeArea = (text: string) => setArea(clampNumeric(text, 1));
-  const handleChangePets = (text: string) => setPetsCount(clampNumeric(text, 0));
+  const handleChangeAge = useCallback((text: string) => {
+    const newAge = clampNumeric(text, 0, 100);
+    setAge(newAge);
+    if (profile) {
+      updateProfile({ age: newAge });
+    }
+  }, [profile, updateProfile]);
+
+  const handleChangeArea = useCallback((text: string) => {
+    // Ограничение: минимум 1, максимум 10,000
+    const newArea = clampNumeric(text, 1, 10000);
+    setArea(newArea);
+    if (profile) {
+      updateProfile({ area: newArea });
+    }
+  }, [profile, updateProfile]);
+
+  const handleChangePets = useCallback((text: string) => {
+    // Ограничение: минимум 0, максимум 100
+    const newPetsCount = clampNumeric(text, 0, 100);
+    setPetsCount(newPetsCount);
+    if (profile) {
+      updateProfile({ petsCount: newPetsCount });
+    }
+  }, [profile, updateProfile]);
+
+  const handleNameChange = useCallback((text: string) => {
+    setName(text);
+    if (profile) {
+      updateProfile({ name: text });
+    }
+  }, [profile, updateProfile]);
+
+  const handleGenderChange = useCallback((newGender: Gender) => {
+    setGender(newGender);
+    if (profile) {
+      updateProfile({ gender: newGender });
+    }
+  }, [profile, updateProfile]);
+
+  const handleProfessionChange = useCallback((newProfession: string) => {
+    setProfession(newProfession);
+    if (profile) {
+      updateProfile({ profession: newProfession });
+    }
+  }, [profile, updateProfile]);
 const isCustomRoomComplete = (r: Room) =>
   !r.isCustom || (r.name.trim() !== '' && r.count.trim() !== '');
 
 const canAddRoom = rooms.every(isCustomRoomComplete);
 
-const handleToggleRoom = (id: string) => {
+const handleToggleRoom = useCallback((id: string) => {
   setRooms((prev) => {
     const checkedCount = prev.filter((r) => r.checked).length;
     const target = prev.find((r) => r.id === id);
@@ -241,7 +285,7 @@ const handleToggleRoom = (id: string) => {
       return prev;
     }
 
-    return prev
+    const newRooms = prev
       .map((room) => {
         if (room.id !== id) return room;
 
@@ -260,16 +304,29 @@ const handleToggleRoom = (id: string) => {
         return { ...room, checked: true, count: nextCount };
       })
       .filter((room: any) => !room._remove);
+
+    // Сохраняем изменения
+    if (profile) {
+      updateProfile({ rooms: newRooms });
+    }
+
+    return newRooms;
   });
-};
+}, [profile, updateProfile]);
 
 
 
-  const handleChangeRoomName = (id: string, roomName: string) => {
-    setRooms((prev) => prev.map((room) => (room.id === id ? { ...room, name: roomName } : room)));
-  };
+  const handleChangeRoomName = useCallback((id: string, roomName: string) => {
+    setRooms((prev) => {
+      const newRooms = prev.map((room) => (room.id === id ? { ...room, name: roomName } : room));
+      if (profile) {
+        updateProfile({ rooms: newRooms });
+      }
+      return newRooms;
+    });
+  }, [profile, updateProfile]);
 
-const handleChangeRoomCount = (id: string, text: string) => {
+const handleChangeRoomCount = useCallback((id: string, text: string) => {
   const digits = text.replace(/\D/g, '');
 
   if (digits === '') {
@@ -280,7 +337,7 @@ const handleChangeRoomCount = (id: string, text: string) => {
 
       const wouldUncheckLast = target.checked && checkedCount <= 1;
 
-      return prev.map((room) =>
+      const newRooms = prev.map((room) =>
         room.id === id
           ? {
               ...room,
@@ -289,37 +346,67 @@ const handleChangeRoomCount = (id: string, text: string) => {
             }
           : room
       );
+
+      if (profile) {
+        updateProfile({ rooms: newRooms });
+      }
+
+      return newRooms;
     });
     return;
   }
 
   const nextCount = clampNumeric(digits, 1, 10);
 
-  setRooms((prev) =>
-    prev.map((room) =>
+  setRooms((prev) => {
+    const newRooms = prev.map((room) =>
       room.id === id ? { ...room, count: nextCount, checked: true } : room
-    )
-  );
-};
+    );
+    if (profile) {
+      updateProfile({ rooms: newRooms });
+    }
+    return newRooms;
+  });
+}, [profile, updateProfile]);
 
 
-const handleAddRoom = () => {
+const handleAddRoom = useCallback(() => {
   if (!canAddRoom) return;
 
-  setRooms((prev) => [
-    ...prev,
-    { id: createId(), name: '', count: '', checked: true, isCustom: true },
-  ]);
-};
+  setRooms((prev) => {
+    const newRooms = [
+      ...prev,
+      { id: createId(), name: '', count: '', checked: true, isCustom: true },
+    ];
+    if (profile) {
+      updateProfile({ rooms: newRooms });
+    }
+    return newRooms;
+  });
+}, [canAddRoom, profile, updateProfile]);
 
 
 
 
-  const updateMember = (id: string, patch: Partial<HouseholdMember>) => {
-    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
-  };
+  const updateMember = useCallback((id: string, patch: Partial<HouseholdMember>) => {
+    setMembers((prev) => {
+      const newMembers = prev.map((m) => (m.id === id ? { ...m, ...patch } : m));
+      if (profile) {
+        updateProfile({ householdMembers: newMembers });
+      }
+      return newMembers;
+    });
+  }, [profile, updateProfile]);
 
-  const deleteMember = (id: string) => setMembers((prev) => prev.filter((m) => m.id !== id));
+  const deleteMember = useCallback((id: string) => {
+    setMembers((prev) => {
+      const newMembers = prev.filter((m) => m.id !== id);
+      if (profile) {
+        updateProfile({ householdMembers: newMembers });
+      }
+      return newMembers;
+    });
+  }, [profile, updateProfile]);
 
   const collapseAllMembers = useCallback(() => {
     setMembers((prev) => prev.map((m) => ({ ...m, expanded: false })));
@@ -344,21 +431,45 @@ const handleAddRoom = () => {
     });
   };
 
-  const handleAddMember = () => {
+  const handleAddMember = useCallback(() => {
     if (!canAddMember) return;
 
-    setMembers((prev) => [
-      ...prev.map((m) => ({ ...m, expanded: false })),
-      {
-        id: createId(),
-        name: `Домочадец ${prev.length + 1}`,
-        age: '',
-        gender: null,
-        profession: '',
-        expanded: true,
-      } as HouseholdMember,
-    ]);
-  };
+    setMembers((prev) => {
+      const newMembers = [
+        ...prev.map((m) => ({ ...m, expanded: false })),
+        {
+          id: createId(),
+          name: `Домочадец ${prev.length + 1}`,
+          age: '',
+          gender: null,
+          profession: '',
+          expanded: true,
+        } as HouseholdMember,
+      ];
+      if (profile) {
+        updateProfile({ householdMembers: newMembers });
+      }
+      return newMembers;
+    });
+  }, [canAddMember, profile, updateProfile]);
+
+  const handleToggleNotifications = useCallback(async (enabled: boolean) => {
+    setNotificationsEnabled(enabled);
+    if (profile) {
+      await updateProfile({ notificationsEnabled: enabled });
+      
+      if (enabled) {
+        const hasPermission = await requestNotificationPermissions();
+        if (hasPermission) {
+          // При включении уведомлений планируем через час после генерации чеклиста
+          // Игнорируем время когда уведомления были включены
+          await scheduleDailyNotification();
+        }
+      } else {
+        await cancelDailyNotification();
+      }
+    }
+  }, [profile, updateProfile]);
 
   useEffect(() => {
     if (!householdOpen) collapseAllMembers();
@@ -390,6 +501,29 @@ const handleAddRoom = () => {
     // чуть учитываем safe-area снизу, чтобы на iOS не было странных зазоров
     return 10;
   }, [insets.bottom]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Настройки</Text>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: 16, fontFamily: 'Nexa-Reg', color: Colors.primary }}>
+            Профиль не найден
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -429,7 +563,7 @@ const handleAddRoom = () => {
               {AVATAR_COMPONENTS.map((Icon, index) => (
                 <Pressable
                   key={index}
-                  onPress={() => setSelectedAvatarIndex(index)}
+                  onPress={() => handleAvatarChange(index)}
                   style={[styles.avatarOption, selectedAvatarIndex === index && styles.avatarOptionSelected]}
                 >
                   <Icon width={36} height={36} />
@@ -444,19 +578,19 @@ const handleAddRoom = () => {
 
             {personalOpen && (
               <View style={styles.sectionBody}>
-                <InputField label="Имя:" value={name} onChangeText={setName} onFocus={handleAnyInputFocus} />
+                <InputField label="Имя:" value={name} onChangeText={handleNameChange} onFocus={handleAnyInputFocus} />
 
                 <Text style={styles.fieldLabel}>Пол:</Text>
                 <RadioButton
                   label="Мужской"
                   selected={gender === 'male'}
-                  onPress={() => setGender('male')}
+                  onPress={() => handleGenderChange('male')}
                   borderColor={Colors.primary}
                 />
                 <RadioButton
                   label="Женский"
                   selected={gender === 'female'}
-                  onPress={() => setGender('female')}
+                  onPress={() => handleGenderChange('female')}
                   borderColor={Colors.red}
                 />
 
@@ -468,9 +602,7 @@ const handleAddRoom = () => {
                   onFocus={handleAnyInputFocus}
                 />
 
-                <SelectField label="Часовой пояс:" value={timezone} onChange={setTimezone} options={TIMEZONES} />
-
-                <SelectField label="Вид профессии:" value={profession} onChange={setProfession} options={PROFESSIONS} />
+                <SelectField label="Вид профессии:" value={profession} onChange={handleProfessionChange} options={PROFESSIONS} />
               </View>
             )}
           </View>
@@ -556,6 +688,36 @@ const handleAddRoom = () => {
                 <Pressable onPress={canAddMember ? handleAddMember : undefined} style={[styles.addButton, { borderColor: canAddMember ? Colors.primary : Colors.disabledprimary, }]}>
                   <Text style={{ fontSize: 24, color: canAddMember ? Colors.primary : Colors.disabledprimary, }}>+</Text>
                 </Pressable>
+              </View>
+            )}
+          </View>
+
+          {/* Уведомления */}
+          <View style={styles.sectionContainer}>
+            {renderSectionHeader('Уведомления', notificationsOpen, () => setNotificationsOpen((v) => !v))}
+
+            {notificationsOpen && (
+              <View style={styles.sectionBody}>
+                <View style={styles.notificationRow}>
+                  <Text style={styles.fieldLabel}>Ежедневные напоминания</Text>
+                  <Checkbox
+                    checked={notificationsEnabled}
+                    onToggle={() => handleToggleNotifications(!notificationsEnabled)}
+                  />
+                </View>
+                <Text style={[styles.fieldLabel, { fontSize: 12, color: Colors.disabled, marginTop: 4 }]}>
+                  Вы будете получать уведомление через час после генерации заданий (1 раз в 24 часа)
+                </Text>
+                
+                <Pressable
+                  onPress={() => sendTestNotification()}
+                  style={styles.testButton}
+                >
+                  <Text style={styles.testButtonText}>Отправить тестовое уведомление</Text>
+                </Pressable>
+                <Text style={[styles.fieldLabel, { fontSize: 12, color: Colors.disabled, marginTop: 4 }]}>
+                  Уведомление придет сразу
+                </Text>
               </View>
             )}
           </View>
@@ -756,5 +918,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 8,
     backgroundColor: Colors.white,
+  },
+  notificationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  testButton: {
+    marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  testButtonText: {
+    fontSize: 15,
+    fontFamily: 'Nexa',
+    color: Colors.primary,
   },
 });

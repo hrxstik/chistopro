@@ -1,35 +1,15 @@
-import { useRouter } from 'expo-router';
-import React from 'react';
-import {
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import CrossIcon from '@/assets/icons/cross.svg';
 import GrayTickIcon from '@/assets/icons/graytick.svg';
 import LoadingIcon from '@/assets/icons/loading.svg';
 import { BackButton } from '@/components/BackButton';
 import { Colors } from '@/constants/colors';
-
-type ChecklistStatus = 'in_progress' | 'done' | 'missed';
-
-type ChecklistItem = {
-  id: string;
-  date: string;
-  status: ChecklistStatus;
-};
-
-const CHECKLISTS: ChecklistItem[] = [
-  { id: '1', date: '03.12.25', status: 'in_progress' },
-  { id: '2', date: '02.12.25', status: 'done' },
-  { id: '3', date: '01.12.25', status: 'done' },
-  { id: '4', date: '30.11.25', status: 'missed' },
-  { id: '5', date: '29.11.25', status: 'done' },
-  { id: '6', date: '28.11.25', status: 'done' },
-];
+import { useChecklistsStats } from '@/hooks/useChecklistsStats';
+import { ChecklistStatus } from '@/types/checklist';
+import { formatDate } from '@/utils/checklistGenerator';
 
 function getStatusIcon(status: ChecklistStatus) {
   if (status === 'in_progress') return <LoadingIcon width={18} height={18} />;
@@ -38,34 +18,28 @@ function getStatusIcon(status: ChecklistStatus) {
 }
 
 function getStatusColor(status: ChecklistStatus) {
-  if (status === 'in_progress') return Colors.primary;   // голубой
-  if (status === 'done') return Colors.disabled;         // серый
-  return Colors.red;                                     // красный
-}
-
-function calcRecordStreak(items: ChecklistItem[]): number {
-  let best = 0;
-  let current = 0;
-
-  for (const item of items) {
-    if (item.status === 'done') {
-      current += 1;
-      best = Math.max(best, current);
-    } else {
-      current = 0;
-    }
-  }
-  return best;
+  if (status === 'in_progress') return Colors.primary; // голубой
+  if (status === 'done') return Colors.disabled; // серый
+  return Colors.red; // красный
 }
 
 export default function ChecklistsScreen() {
   const router = useRouter();
+  const { checklists, loading, totalClosed, recordStreak, reload } = useChecklistsStats();
 
-  const totalClosed = CHECKLISTS.filter(
-    (c) => c.status === 'done' || c.status === 'in_progress'
-  ).length;
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload]),
+  );
 
-  const recordStreak = calcRecordStreak(CHECKLISTS);
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -77,39 +51,32 @@ export default function ChecklistsScreen() {
           <View style={{ width: 32 }} />
         </View>
       </View>
-<View style={styles.topDivider} />
+      <View style={styles.topDivider} />
       {/* итоги */}
       <View style={styles.summary}>
-        <Text style={styles.summaryText}>
-          Всего закрыто чек-листов: {totalClosed}
-        </Text>
-        <Text style={styles.summaryText}>
-          Рекорд закрытых подряд: {recordStreak}
-        </Text>
+        <Text style={styles.summaryText}>Всего закрыто чек-листов: {totalClosed}</Text>
+        <Text style={styles.summaryText}>Рекорд закрытых подряд: {recordStreak}</Text>
       </View>
 
       <FlatList
-        data={CHECKLISTS}
+        data={checklists}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
           const color = getStatusColor(item.status);
+          const formattedDate = formatDate(item.date);
           return (
             <Pressable
-              style={[
-                styles.row,
-                { borderColor: color },
-              ]}
+              style={[styles.row, { borderColor: color }]}
               onPress={() =>
                 router.push({
                   pathname: '/stats/checklist-details',
-                  params: { date: item.date },
+                  params: { date: item.date, checklistId: item.id },
                 })
-              }
-            >
+              }>
               <View style={styles.statusIcon}>{getStatusIcon(item.status)}</View>
-              <Text style={[styles.dateText, { color }]}>{item.date}</Text>
+              <Text style={[styles.dateText, { color }]}>{formattedDate}</Text>
             </Pressable>
           );
         }}
