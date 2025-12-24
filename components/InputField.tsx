@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/colors';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 
 type Props = {
   label: string;
@@ -8,6 +8,7 @@ type Props = {
   keyboardType?: 'default' | 'numeric';
   min?: number;
   max?: number;
+  onFocus?: TextInputProps['onFocus'];
 };
 
 export function InputField({
@@ -17,6 +18,7 @@ export function InputField({
   onChangeText,
   min,
   max,
+  onFocus,
 }: Props) {
   const handleChange = (text: string) => {
     if (keyboardType !== 'numeric') {
@@ -46,6 +48,7 @@ export function InputField({
         value={value}
         keyboardType={keyboardType}
         onChangeText={handleChange}
+        onFocus={onFocus}
         style={styles.input}
         placeholder=""
       />
