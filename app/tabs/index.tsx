@@ -22,7 +22,7 @@ type Task = {
 };
 
 const TOTAL_DAYS = 28;
-const COMPLETED_DAYS = 7;
+const COMPLETED_DAYS = 1;
 
 const INITIAL_TASKS: Task[] = [
   {

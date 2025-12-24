@@ -119,22 +119,24 @@ const handleChangeRoomCount = (id: string, text: string) => {
   );
 };
 
-  const handleAddRoom = () => {
-    setRooms((prev) => [
-      ...prev,
-      {
-        id: createId(),
-        name: '',
-        count: '',
-        checked: true,
-        isCustom: true,
-      },
-    ]);
+const handleAddRoom = () => {
+  if (!canAddRoom) return;
 
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    });
-  };
+  setRooms((prev) => [
+    ...prev,
+    {
+      id: createId(),
+      name: '',
+      count: '',
+      checked: true,
+      isCustom: true,
+    },
+  ]);
+
+  requestAnimationFrame(() => {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  });
+};
 
   const handleChangeArea = (text: string) => {
     setArea(clampNumeric(text, 1)); // минимум 1
@@ -159,7 +161,11 @@ const handleChangeRoomCount = (id: string, text: string) => {
     const n = parseInt(r.count, 10);
     return !isNaN(n) && n >= 1 && n <= 10;
   });
+const isCustomRoomComplete = (r: Room) =>
+  !r.isCustom || (r.name.trim() !== '' && r.count.trim() !== '');
 
+// можно ли добавлять новую комнату
+const canAddRoom = rooms.every(isCustomRoomComplete);
   const isValid =
     area.trim() !== '' &&
     petsCount.trim() !== '' &&
@@ -258,8 +264,8 @@ const handleChangeRoomCount = (id: string, text: string) => {
         ))}
 
         {/* Кнопка добавить комнату */}
-        <Pressable onPress={handleAddRoom} style={styles.addButton}>
-          <Text style={styles.addButtonText}>+</Text>
+        <Pressable onPress={handleAddRoom} style={[styles.addButton, { borderColor: canAddRoom ? Colors.primary : Colors.disabledprimary, }]}>
+          <Text style={{ fontSize: 24, color: canAddRoom ? Colors.primary : Colors.disabledprimary, }}>+</Text>
         </Pressable>
       </ScrollView>
     </QuestionnaireLayout>
@@ -367,15 +373,10 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: Colors.primary,
     backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'flex-start',
     marginTop: 8,
-  },
-  addButtonText: {
-    fontSize: 24,
-    color: Colors.primary,
   },
 });
