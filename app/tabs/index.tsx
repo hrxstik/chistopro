@@ -1,13 +1,6 @@
 // app/(tabs)/index.tsx
-import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useEffect } from 'react';
+import { ActivityIndicator, FlatList, Image, StyleSheet, Text, View } from 'react-native';
 
 import GiftIcon from '@/assets/icons/gift.svg';
 import { AdBanner } from '@/components/AdBanner';
@@ -15,29 +8,65 @@ import { Checkbox } from '@/components/Checkbox';
 import { TaskTimeInfo } from '@/components/TaskTimeInfo';
 import { Colors } from '@/constants/colors';
 import { useChecklist } from '@/hooks/useChecklist';
-import { useProfile } from '@/hooks/useProfile';
 import { useChubrikProgress } from '@/hooks/useChubrikProgress';
-import { checklistStorage } from '@/utils/checklistStorage';
+import { useProfile } from '@/hooks/useProfile';
 
 const TOTAL_DAYS = 28;
 
-function getMascotSource(progress: number) {
-  if (progress <= 6) {
-    return require('@/assets/images/chubrik1_dirty1.png');
+// Список имен чубриков
+const CHUBRIK_NAMES: Record<string, string> = {
+  '1': 'Чубрик обычный',
+  '2': 'Чубрик-енот',
+};
+
+// Функция для получения изображения чубрика на основе ID и прогресса
+function getMascotSource(chubrikId: string, progress: number) {
+  // Определяем стадию роста
+  let stage = 1;
+  if (progress <= 6) stage = 1;
+  else if (progress <= 13) stage = 2;
+  else if (progress <= 20) stage = 3;
+  else stage = 4; // Чистый (progress > 20 или >= 28)
+
+  // Выбираем изображение в зависимости от ID чубрика и стадии
+  if (stage === 4) {
+    // Чистый чубрик
+    switch (chubrikId) {
+      case '1':
+        return require('@/assets/images/chubrik1_clean.png');
+      case '2':
+        return require('@/assets/images/chubrik2_clean.png');
+      default:
+        return require('@/assets/images/chubrik1_clean.png');
+    }
+  } else {
+    // Грязный чубрик
+    switch (chubrikId) {
+      case '1':
+        if (stage === 1) return require('@/assets/images/chubrik1_dirty1.png');
+        if (stage === 2) return require('@/assets/images/chubrik1_dirty2.png');
+        return require('@/assets/images/chubrik1_dirty3.png');
+      case '2':
+        if (stage === 1) return require('@/assets/images/chubrik2_dirty1.png');
+        if (stage === 2) return require('@/assets/images/chubrik2_dirty2.png');
+        return require('@/assets/images/chubrik2_dirty3.png');
+      default:
+        if (stage === 1) return require('@/assets/images/chubrik1_dirty1.png');
+        if (stage === 2) return require('@/assets/images/chubrik1_dirty2.png');
+        return require('@/assets/images/chubrik1_dirty3.png');
+    }
   }
-  if (progress <= 13) {
-    return require('@/assets/images/chubrik1_dirty2.png');
-  }
-  if (progress <= 20) {
-    return require('@/assets/images/chubrik1_dirty3.png');
-  }
-  return require('@/assets/images/chubrik1_clean.png');
+}
+
+// Функция для получения имени текущего чубрика
+function getChubrikName(chubrikId: string): string {
+  return CHUBRIK_NAMES[chubrikId] || 'Чубрик обычный';
 }
 
 // Уровни чубрика на основе прогресса
 function getLevelText(progress: number, level: number): string {
   if (progress >= 28) {
-    return "Привычка сформирована";
+    return 'Привычка сформирована';
   }
   return `${level} уровень`;
 }
@@ -46,7 +75,12 @@ export default function HomeScreen() {
   const { profile } = useProfile();
   const rooms = profile?.rooms || [];
   const { currentChecklist, loading, toggleTask } = useChecklist(rooms);
-  const { progress: chubrikProgress, currentLevel, loading: progressLoading, reload: reloadProgress } = useChubrikProgress();
+  const {
+    progress: chubrikProgress,
+    currentLevel,
+    loading: progressLoading,
+    reload: reloadProgress,
+  } = useChubrikProgress();
 
   // Обновляем прогресс при изменении чеклиста
   useEffect(() => {
@@ -55,9 +89,13 @@ export default function HomeScreen() {
     }
   }, [currentChecklist, reloadProgress]);
 
+  // Определяем текущий ID чубрика (количество выращенных + 1)
+  const currentChubrikId = profile ? String((profile.chubriks || 0) + 1) : '1';
+  const chubrikName = getChubrikName(currentChubrikId);
+
   const progress = Math.max(0, Math.min(1, chubrikProgress / TOTAL_DAYS));
   const level = getLevelText(chubrikProgress, currentLevel);
-  const mascotSource = getMascotSource(chubrikProgress);
+  const mascotSource = getMascotSource(currentChubrikId, chubrikProgress);
 
   if (loading || progressLoading) {
     return (
@@ -72,7 +110,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* верхняя голубая линия */}
-<AdBanner />
+      <AdBanner />
 
       <FlatList
         data={tasks}
@@ -80,9 +118,9 @@ export default function HomeScreen() {
         ListHeaderComponent={
           <>
             {/* Реклама чуть ниже синей линии */}
-            
+
             <View style={styles.headerBlock}>
-              <Text style={styles.mascotTitle}>Чубрик обыкновенный</Text>
+              <Text style={styles.mascotTitle}>{chubrikName}</Text>
               <Text style={styles.levelText}>{level}</Text>
 
               <Image source={mascotSource} style={styles.mascot} />
@@ -90,12 +128,7 @@ export default function HomeScreen() {
               {/* шкала прогресса */}
               <View style={styles.progressWrapper}>
                 <View style={styles.progressBar}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${progress * 100}%` },
-                    ]}
-                  />
+                  <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
                   <View style={styles.progressLabelWrapper}>
                     <Text style={styles.progressLabel}>
                       {chubrikProgress}/{TOTAL_DAYS}
@@ -103,7 +136,6 @@ export default function HomeScreen() {
                   </View>
                 </View>
 
-                
                 <View style={styles.phasesWrapper}>
                   <View style={styles.phaseItem}>
                     <View style={styles.phaseTick} />
@@ -140,16 +172,8 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <View style={styles.taskRow}>
             <View style={styles.taskLeft}>
-              <Checkbox
-                checked={item.status === 'done'}
-                onToggle={() => toggleTask(item.id)}
-              />
-              <Text
-                style={[
-                  styles.taskTitle,
-                  item.status === 'done' && styles.taskTitleCompleted,
-                ]}
-              >
+              <Checkbox checked={item.status === 'done'} onToggle={() => toggleTask(item.id)} />
+              <Text style={[styles.taskTitle, item.status === 'done' && styles.taskTitleCompleted]}>
                 {item.title}
               </Text>
             </View>
@@ -269,7 +293,7 @@ const styles = StyleSheet.create({
   },
   taskRow: {
     flexDirection: 'row',
-    alignItems: 'stretch',   // важно для высоты палки
+    alignItems: 'stretch', // важно для высоты палки
     justifyContent: 'space-between',
     borderRadius: 10,
     borderWidth: 1.5,
@@ -293,7 +317,7 @@ const styles = StyleSheet.create({
   },
   taskTitleCompleted: {
     textDecorationLine: 'line-through',
-    color: Colors.primary, 
+    color: Colors.primary,
   },
   emptyTasksText: {
     fontSize: 15,
@@ -303,5 +327,4 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-
 });

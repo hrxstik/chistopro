@@ -1,15 +1,11 @@
-import { useRouter } from 'expo-router';
-import React from 'react';
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { BackButton } from '@/components/BackButton';
 import { ChubrikTerrariumItem } from '@/components/ChubrikTerrariumItem';
 import { Colors } from '@/constants/colors';
+import { useChubrikProgress } from '@/hooks/useChubrikProgress';
+import { useProfile } from '@/hooks/useProfile';
 
 type Chubrik = {
   id: string;
@@ -18,20 +14,49 @@ type Chubrik = {
   cleaned: boolean;
 };
 
-const CHUBRIKS: Chubrik[] = [
-  { id: '1', name: 'Чубрик обычный', acquired: true, cleaned: true },
-  { id: '2', name: 'Чубрик 2', acquired: true, cleaned: false },
-  { id: '3', name: 'Чубрик 3', acquired: false, cleaned: false },
-  { id: '4', name: 'Чубрик 4', acquired: false, cleaned: false },
-  { id: '5', name: 'Чубрик 5', acquired: false, cleaned: false },
-  { id: '6', name: 'Чубрик 6', acquired: false, cleaned: false },
-  { id: '7', name: 'Чубрик 7', acquired: false, cleaned: false },
-];
+// Список всех доступных чубриков
+const CHUBRIK_NAMES: Record<string, string> = {
+  '1': 'Чубрик обычный',
+  '2': 'Чубрик-енот',
+};
 
 export default function TerrariumScreen() {
-  const router = useRouter();
+  const { profile, loading: profileLoading } = useProfile();
+  const { progress: currentProgress, loading: progressLoading } = useChubrikProgress();
+  const [chubriks, setChubriks] = useState<Chubrik[]>([]);
 
-  const totalAcquired = CHUBRIKS.filter(c => c.acquired).length;
+  useEffect(() => {
+    if (profile && !profileLoading && !progressLoading) {
+      const cleanedCount = profile.chubriks || 0; // Количество полностью выращенных чубриков
+      const currentChubrikId = cleanedCount + 1; // ID текущего выращиваемого чубрика
+
+      // Формируем список всех чубриков
+      const allChubriks: Chubrik[] = Object.keys(CHUBRIK_NAMES).map((id) => {
+        const chubrikId = parseInt(id, 10);
+        const cleaned = cleanedCount >= chubrikId; // Очищен, если количество выращенных >= id
+        const acquired = cleaned || chubrikId === currentChubrikId; // Получен, если очищен или это текущий выращиваемый чубрик (даже с прогрессом 0/28)
+
+        return {
+          id,
+          name: CHUBRIK_NAMES[id],
+          acquired,
+          cleaned,
+        };
+      });
+
+      setChubriks(allChubriks);
+    }
+  }, [profile, currentProgress, profileLoading, progressLoading]);
+
+  const totalAcquired = chubriks.filter((c) => c.acquired).length;
+
+  if (profileLoading || progressLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -47,30 +72,26 @@ export default function TerrariumScreen() {
 
       {/* статистика */}
       <View style={styles.summary}>
-        <Text style={styles.summaryText}>
-          Всего получено чубриков: {totalAcquired}
-        </Text>
+        <Text style={styles.summaryText}>Всего получено чубриков: {totalAcquired}</Text>
       </View>
 
       {/* список */}
-<FlatList
-  data={CHUBRIKS}
-  keyExtractor={(item) => item.id}
-  contentContainerStyle={styles.listContent}
-  renderItem={({ item }) => (
-    <ChubrikTerrariumItem
-      name={item.name}
-      acquired={item.acquired}
-      cleaned={item.cleaned}
-    />
-  )}
-  showsVerticalScrollIndicator={false}
-/>
-
-      
-
+      <FlatList
+        data={chubriks}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        renderItem={({ item }) => (
+          <ChubrikTerrariumItem
+            id={item.id}
+            name={item.name}
+            acquired={item.acquired}
+            cleaned={item.cleaned}
+            currentProgress={item.id === String((profile?.chubriks || 0) + 1) ? currentProgress : 0}
+          />
+        )}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
-    
   );
 }
 
@@ -111,10 +132,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Nexa',
   },
 
-listContent: {
-  paddingHorizontal: 16,
-  paddingBottom: 40,
-},
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
 
   separator: {
     width: '100%',
