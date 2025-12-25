@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
 import { checklistStorage } from '@/utils/checklistStorage';
-import { Checklist } from '@/types/checklist';
+import { useEffect, useState } from 'react';
 
 export function useProfileStats() {
   const [stats, setStats] = useState({
@@ -19,11 +18,11 @@ export function useProfileStats() {
     try {
       // Статистика учитывает ВСЕ чеклисты (и до пропуска, и после)
       const checklists = await checklistStorage.getChecklists();
-      
+
       // Подсчитываем выполненные задачи
       let tasksDone = 0;
       for (const checklist of checklists) {
-        tasksDone += checklist.tasks.filter(t => t.status === 'done').length;
+        tasksDone += checklist.tasks.filter((t) => t.status === 'done').length;
       }
 
       // Рекорд закрытых чеклистов подряд
@@ -45,14 +44,48 @@ export function useProfileStats() {
       const { storage } = await import('@/utils/storage');
       const profile = await storage.getProfile();
       const chubriks = profile?.chubriks || 0; // Количество выращенных чубриков (28/28)
+      const maxLevel = profile?.chubrikMaxLevel || 1;
 
-      // Количество достижений (пока упрощенно, можно расширить)
-      const achievements = chubriks > 0 ? 1 : 0; // Минимум одно достижение если есть выращенные чубрики
+      // Подсчитываем количество выполненных достижений по той же логике что в achievements.tsx
+      let achievementsCount = 0;
+
+      // Достижения по уровням чубрика (care)
+      if (maxLevel >= 2) achievementsCount++; // Ухажёр за чубриком I (уровень 2)
+      if (maxLevel >= 3) achievementsCount++; // Ухажёр за чубриком II (уровень 3)
+      if (maxLevel >= 4) achievementsCount++; // Ухажёр за чубриком III (уровень 4)
+      if (maxLevel >= 5) achievementsCount++; // Ухажёр за чубриком IV (уровень 5)
+
+      // Достижения по сериям (streak)
+      let bestStreak = 0;
+      let tempStreak = 0;
+      for (const checklist of sorted) {
+        if (checklist.status === 'done') {
+          tempStreak += 1;
+          bestStreak = Math.max(bestStreak, tempStreak);
+        } else {
+          tempStreak = 0;
+        }
+      }
+      if (bestStreak >= 7) achievementsCount++; // Упорный I (7 чеклистов)
+      if (bestStreak >= 28) achievementsCount++; // Упорный II (28 чеклистов)
+      if (bestStreak >= 90) achievementsCount++; // Упорный III (90 чеклистов)
+
+      // Достижения по коллекции чубриков (collector)
+      if (chubriks >= 1) achievementsCount++; // Коллекционер чубриков I (1 чубрик)
+      if (chubriks >= 3) achievementsCount++; // Коллекционер чубриков II (3 чубрика)
+      if (chubriks >= 5) achievementsCount++; // Коллекционер чубриков III (5 чубриков)
+      if (chubriks >= 10) achievementsCount++; // Коллекционер чубриков IV (10 чубриков)
+
+      // Достижения по пропущенным чеклистам (offender)
+      const leftChubriks = checklists.filter((c) => c.status === 'missed').length;
+      if (leftChubriks >= 10) achievementsCount++; // Обидчик чубриков I (10 пропущенных)
+      if (leftChubriks >= 20) achievementsCount++; // Обидчик чубриков II (20 пропущенных)
+      if (leftChubriks >= 30) achievementsCount++; // Обидчик чубриков III (30 пропущенных)
 
       setStats({
         tasksDone,
         checklistRecord,
-        achievements,
+        achievements: achievementsCount,
         chubriks,
       });
     } catch (error) {
@@ -68,4 +101,3 @@ export function useProfileStats() {
     reload: loadStats,
   };
 }
-
