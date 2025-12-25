@@ -22,7 +22,7 @@ export type UserProfile = {
 
   // Step 4
   area: string;
-  petsCount: string;
+  hasPets: boolean;
   rooms: Room[];
 
   // Notifications

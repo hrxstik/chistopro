@@ -10,7 +10,7 @@ type Props = {
   name: string;
   acquired: boolean;
   cleaned: boolean;
-  currentProgress: number; // Текущий прогресс для определения стадии роста
+  currentProgress: number;
 };
 
 // Функция для получения изображения чубрика
@@ -27,11 +27,15 @@ function getChubrikImage(id: string, cleaned: boolean, progress: number) {
     }
   } else if (progress > 0) {
     // Если выращивается - показываем грязную версию в зависимости от стадии
+    // Распределение:
+    // dirty1: 0-2 чеклиста
+    // dirty2: 3-4 чеклиста
+    // dirty3: 5-6 чеклистов
+    // чистый: 7-8 чеклистов (обрабатывается выше в условии cleaned)
     let stage = 1;
-    if (progress <= 6) stage = 1;
-    else if (progress <= 13) stage = 2;
-    else if (progress <= 20) stage = 3;
-    else stage = 3; // Максимальная грязная стадия
+    if (progress <= 2) stage = 1; // dirty1 - самый грязный (0-2)
+    else if (progress <= 4) stage = 2; // dirty2 - средний (3-4)
+    else stage = 3; // dirty3 - самый чистый (5-6)
 
     switch (id) {
       case '1':
@@ -61,14 +65,13 @@ export function ChubrikTerrariumItem({ id, name, acquired, cleaned, currentProgr
 
   // Логика отображения:
   // 1. Если очищен (cleaned) - показываем чистую иконку
-  // 2. Если получен но не очищен - показываем скрытую иконку (имя показывается)
+  // 2. Если получен но не очищен - показываем грязную иконку на последней стадии
   // 3. Если не получен - показываем скрытую иконку и "Неизвестно"
-  const icon =
-    cleaned && imageSource ? (
-      <Image source={imageSource} style={styles.cleanImage} />
-    ) : (
-      <HiddenIcon width={100} height={90} />
-    );
+  const icon = imageSource ? (
+    <Image source={imageSource} style={styles.cleanImage} />
+  ) : (
+    <HiddenIcon width={100} height={90} />
+  );
 
   // цвета как у достижений: активный/неактивный
   const borderColor = acquired ? Colors.primary : Colors.disabled;

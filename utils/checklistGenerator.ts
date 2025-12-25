@@ -345,9 +345,9 @@ function calculateTaskMinutes(
     task.type === TaskType.VACUUMING
   ) {
     if (houseSize === 'medium') {
-      return Math.ceil(baseMinutes * 1.5);
+      return Math.floor(baseMinutes * 1.5);
     } else if (houseSize === 'large') {
-      return Math.ceil(baseMinutes * 2);
+      return Math.floor(baseMinutes * 2);
     }
   }
 
@@ -395,11 +395,12 @@ export async function generateChecklist(
   // Вычисляем максимальное время
   const MAX_MINUTES = calculateMaxMinutes(profile.householdMembers || []);
   const houseSize = getHouseSizeType(profile.area || '0');
-  const hasPets = parseInt(profile.petsCount || '0') > 0;
+  const hasPets = profile.hasPets || false;
   const hasChildren = hasChildrenUnder7(profile.householdMembers || []);
 
-  // Получаем историю последовательности стирки
-  const laundrySequence = await taskHistory.getLaundrySequence();
+  // Получаем состояние генераций стирки и увеличиваем счетчик
+  const { taskId: laundryTaskId, newGeneration: laundryGeneration } =
+    await taskHistory.getAndIncrementLaundryGeneration();
 
   const allTasks: ChecklistTask[] = [];
   let totalMinutes = 0;
@@ -468,85 +469,36 @@ export async function generateChecklist(
     }
   }
 
-  // Правило 8: Обработка последовательности стирки (32 -> 33 -> 34)
-  const today = new Date(date);
-  const todayStr = date;
-
-  // Проверяем, можно ли ставить задачу 32 (если прошла неделя после задачи 34)
-  const canPlaceTask32 =
-    !laundrySequence.cooldownUntil || new Date(laundrySequence.cooldownUntil) <= today;
-
-  // Проверяем, нужно ли ставить задачу 33 (если вчера была 32)
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(
-    2,
-    '0',
-  )}-${String(yesterday.getDate()).padStart(2, '0')}`;
-
-  const shouldPlaceTask33 = laundrySequence.lastTask32Date === yesterdayStr;
-  const shouldPlaceTask34 = laundrySequence.lastTask33Date === yesterdayStr;
-
-  // Добавляем задачу 32 если можно (и если не была использована вчера - правило 3)
-  if (canPlaceTask32 && !shouldPlaceTask33 && !shouldPlaceTask34) {
-    const wasTask32UsedYesterday = await taskHistory.wasTaskUsedYesterday('GENERAL', 32, date);
-    if (!wasTask32UsedYesterday) {
-      const task32 = TASKS.find((t) => t.id === 32);
-      if (task32 && totalMinutes + task32.minutes <= MAX_MINUTES) {
-        const taskMinutes = calculateTaskMinutes(task32, houseSize);
-        if (totalMinutes + taskMinutes <= MAX_MINUTES) {
-          const formattedDescription = formatTaskDescription(task32.description, 'GENERAL', false);
-          allTasks.push({
-            id: `GENERAL-${task32.id}-${Date.now()}-${allTasks.length}`,
-            title: formattedDescription,
-            minutes: taskMinutes,
-            status: 'in_progress',
-            roomName: 'GENERAL',
-          });
-          totalMinutes += taskMinutes;
-          usedTaskIdsToday.add(32);
-
-          if (!usedTaskTypesByRoom.has('GENERAL')) {
-            usedTaskTypesByRoom.set('GENERAL', new Set());
-          }
-          usedTaskTypesByRoom.get('GENERAL')!.add(task32.type);
-        }
-      }
-    }
-  }
-
-  // Добавляем задачи стирки если нужно
-  if (shouldPlaceTask33) {
-    const task33 = TASKS.find((t) => t.id === 33);
-    if (task33 && totalMinutes + task33.minutes <= MAX_MINUTES) {
-      const formattedDescription = formatTaskDescription(task33.description, 'GENERAL', false);
-      allTasks.push({
-        id: `GENERAL-${task33.id}-${Date.now()}-${allTasks.length}`,
-        title: formattedDescription,
-        minutes: task33.minutes,
-        status: 'in_progress',
-        roomName: 'GENERAL',
-      });
-      totalMinutes += task33.minutes;
-      usedTaskIdsToday.add(33);
-    }
-  }
-
-  if (shouldPlaceTask34) {
-    const task34 = TASKS.find((t) => t.id === 34);
-    if (task34 && totalMinutes + task34.minutes <= MAX_MINUTES) {
-      const taskMinutes = calculateTaskMinutes(task34, houseSize);
+  // Правило 8: Обработка последовательности стирки (32 -> 33 -> 34) на основе генераций
+  // Паттерн: 32, 33, 34, затем 7 пропусков (всего 10 генераций в цикле)
+  if (laundryTaskId !== null) {
+    const laundryTask = TASKS.find((t) => t.id === laundryTaskId);
+    if (laundryTask && totalMinutes + laundryTask.minutes <= MAX_MINUTES) {
+      const taskMinutes = calculateTaskMinutes(laundryTask, houseSize);
       if (totalMinutes + taskMinutes <= MAX_MINUTES) {
-        const formattedDescription = formatTaskDescription(task34.description, 'GENERAL', false);
+        const formattedDescription = formatTaskDescription(
+          laundryTask.description,
+          'GENERAL',
+          false,
+        );
         allTasks.push({
-          id: `GENERAL-${task34.id}-${Date.now()}-${allTasks.length}`,
+          id: `GENERAL-${laundryTask.id}-${Date.now()}-${allTasks.length}`,
           title: formattedDescription,
           minutes: taskMinutes,
           status: 'in_progress',
           roomName: 'GENERAL',
         });
         totalMinutes += taskMinutes;
-        usedTaskIdsToday.add(34);
+        usedTaskIdsToday.add(laundryTaskId);
+
+        if (!usedTaskTypesByRoom.has('GENERAL')) {
+          usedTaskTypesByRoom.set('GENERAL', new Set());
+        }
+        usedTaskTypesByRoom.get('GENERAL')!.add(laundryTask.type);
+
+        console.log(
+          `Laundry task ${laundryTaskId} added (generation ${laundryGeneration.generationCount}, step ${laundryGeneration.currentLaundryStep})`,
+        );
       }
     }
   }
@@ -666,37 +618,27 @@ export async function generateChecklist(
     }
   }
 
-  // Правило 8: Обновляем историю последовательности стирки
-  const task32Used = usedTaskIdsToday.has(32);
-  const task33Used = usedTaskIdsToday.has(33);
-  const task34Used = usedTaskIdsToday.has(34);
-
-  if (task32Used) {
-    laundrySequence.lastTask32Date = todayStr;
-    laundrySequence.cooldownUntil = null; // Сбрасываем кулдаун, так как начали новую последовательность
-  }
-  if (task33Used) {
-    laundrySequence.lastTask33Date = todayStr;
-  }
-  if (task34Used) {
-    laundrySequence.lastTask34Date = todayStr;
-    // Устанавливаем кулдаун на неделю вперед
-    const cooldownDate = new Date(today);
-    cooldownDate.setDate(cooldownDate.getDate() + 7);
-    laundrySequence.cooldownUntil = `${cooldownDate.getFullYear()}-${String(
-      cooldownDate.getMonth() + 1,
-    ).padStart(2, '0')}-${String(cooldownDate.getDate()).padStart(2, '0')}`;
+  // Правило 8: Состояние стирки уже обновлено в incrementLaundryGeneration()
+  // Здесь просто логируем для отладки
+  if (laundryTaskId !== null) {
+    console.log(
+      `Laundry cycle: generation ${laundryGeneration.generationCount}, step ${laundryGeneration.currentLaundryStep}, task ${laundryTaskId}`,
+    );
+  } else {
+    console.log(
+      `Laundry cycle: generation ${laundryGeneration.generationCount}, step ${laundryGeneration.currentLaundryStep}, no laundry task`,
+    );
   }
 
-  await taskHistory.saveLaundrySequence(laundrySequence);
-
-  // Создаем чеклист
+  // Создаем чеклист с уникальным ID на основе timestamp и случайного числа
+  const now = Date.now();
+  const randomSuffix = Math.floor(Math.random() * 1000000);
   const checklist: Checklist = {
-    id: `checklist-${date}`,
+    id: `checklist-${date}-${now}-${randomSuffix}`,
     date,
     status: 'in_progress',
     tasks: allTasks,
-    createdAt: Date.now(),
+    createdAt: now,
   };
 
   // Обновляем историю задач после генерации

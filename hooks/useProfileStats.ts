@@ -27,11 +27,8 @@ export function useProfileStats() {
       }
 
       // Рекорд закрытых чеклистов подряд
-      const sorted = [...checklists].sort((a, b) => {
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
-        return dateA - dateB;
-      });
+      // Сортируем по времени создания (старые первыми), а не по дате
+      const sorted = [...checklists].sort((a, b) => a.createdAt - b.createdAt);
 
       let checklistRecord = 0;
       let currentStreak = 0;

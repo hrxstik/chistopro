@@ -178,7 +178,7 @@ export default function SettingsScreen() {
 
   // дом
   const [area, setArea] = useState('');
-  const [petsCount, setPetsCount] = useState('');
+  const [hasPets, setHasPets] = useState(false);
   const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
 
   // домочадцы
@@ -193,7 +193,7 @@ export default function SettingsScreen() {
       setAge(profile.age || '');
       setProfession(profile.profession || '');
       setArea(profile.area || '');
-      setPetsCount(profile.petsCount || '');
+      setHasPets(profile.hasPets || false);
       setRooms(profile.rooms && profile.rooms.length > 0 ? profile.rooms : DEFAULT_ROOMS);
       setMembers(profile.householdMembers || []);
       setNotificationsEnabled(profile.notificationsEnabled || false);
@@ -238,14 +238,12 @@ export default function SettingsScreen() {
     }
   }, [profile, updateProfile]);
 
-  const handleChangePets = useCallback((text: string) => {
-    // Ограничение: минимум 0, максимум 100
-    const newPetsCount = clampNumeric(text, 0, 100);
-    setPetsCount(newPetsCount);
+  const handleTogglePets = useCallback(() => {
+    setHasPets((prev) => !prev);
     if (profile) {
-      updateProfile({ petsCount: newPetsCount });
+      updateProfile({ hasPets: !hasPets });
     }
-  }, [profile, updateProfile]);
+  }, [profile, updateProfile, hasPets]);
 
   const handleNameChange = useCallback((text: string) => {
     setName(text);
@@ -626,13 +624,10 @@ const handleAddRoom = useCallback(() => {
                   <Text style={styles.areaSuffix}>м²</Text>
                 </View>
 
-                <InputField
-                  label="Количество домашних животных:"
-                  value={petsCount}
-                  onChangeText={handleChangePets}
-                  keyboardType="numeric"
-                  onFocus={handleAnyInputFocus}
-                />
+                <View style={styles.petsRow}>
+                  <Text style={styles.fieldLabel}>Есть домашние животные:</Text>
+                  <Checkbox checked={hasPets} onToggle={handleTogglePets} />
+                </View>
 
                 <View style={styles.roomsHeader}>
                   <Text style={styles.fieldLabelNoPad}>Типы комнат:</Text>
@@ -924,6 +919,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  petsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   testButton: {
     marginTop: 12,

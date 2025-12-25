@@ -4,138 +4,109 @@ import { Room } from '@/types/profile';
 import { generateChecklist, getTodayDateString } from '@/utils/checklistGenerator';
 import { checklistStorage } from '@/utils/checklistStorage';
 import { storage } from '@/utils/storage';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function useChecklist(rooms: Room[]) {
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading, loadProfile } = useProfile();
   const [currentChecklist, setCurrentChecklist] = useState<Checklist | null>(null);
   const [loading, setLoading] = useState(true);
+  const isLoadingRef = useRef(false); // Защита от повторных вызовов
 
   const loadTodayChecklist = useCallback(async () => {
+    // Защита от повторных вызовов (например, из-за Strict Mode)
+    if (isLoadingRef.current) {
+      console.log('Already loading checklist, skipping...');
+      return;
+    }
+
+    // Ждем загрузки профиля и комнат перед генерацией чеклиста
+    if (profileLoading) {
+      console.log('Profile still loading, waiting...');
+      return;
+    }
+
+    if (!profile || !rooms || rooms.length === 0) {
+      console.log('Profile or rooms not loaded yet, waiting...');
+      return;
+    }
+
+    isLoadingRef.current = true;
     try {
       const today = getTodayDateString();
-
-      // Проверяем, сколько дней прошло с последнего визита (до обновления timestamp)
-      const daysSinceLastVisit = await storage.getDaysSinceLastVisit();
-      const MAX_MISSED_DAYS = 3; // Максимум 3 дня пропуска
-
-      // Обновляем timestamp последнего визита при каждом открытии приложения
-      // Это делаем после проверки, чтобы правильно определить пропущенные дни
-      await storage.setLastVisitTimestamp(Date.now());
-
-      // Проверяем, прошло ли 24 часа с момента создания последнего чеклиста
-      const lastChecklist = await checklistStorage.getLastChecklist();
       const now = Date.now();
-      const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; // 24 часа в миллисекундах
 
-      // Если пользователь не заходил, генерируем пропущенные чеклисты за дни отсутствия (первые 3 дня)
-      if (daysSinceLastVisit > 0 && daysSinceLastVisit <= MAX_MISSED_DAYS && lastChecklist) {
-        const daysToGenerate = Math.min(daysSinceLastVisit, MAX_MISSED_DAYS);
-        const lastChecklistDate = new Date(lastChecklist.date);
+      // Обновляем timestamp последнего визита
+      await storage.setLastVisitTimestamp(now);
 
-        // Генерируем пропущенные чеклисты за каждый день отсутствия
-        for (let i = 1; i <= daysToGenerate; i++) {
-          const missedDate = new Date(lastChecklistDate);
-          missedDate.setDate(missedDate.getDate() + i);
-          const missedDateString = `${missedDate.getFullYear()}-${String(
-            missedDate.getMonth() + 1,
-          ).padStart(2, '0')}-${String(missedDate.getDate()).padStart(2, '0')}`;
-
-          // Проверяем, есть ли уже чеклист на эту дату
-          const existingChecklist = await checklistStorage.getChecklistByDate(missedDateString);
-          if (!existingChecklist) {
-            // Создаем пропущенный чеклист (ушедший чубрик)
-            const selectedRooms = rooms.filter((r) => r.checked);
-            let missedChecklist: Checklist;
-
-            if (selectedRooms.length > 0) {
-              missedChecklist = await generateChecklist(rooms, missedDateString, profile);
-            } else {
-              missedChecklist = {
-                id: `checklist-${missedDateString}`,
-                date: missedDateString,
-                status: 'missed',
-                tasks: [],
-                createdAt: lastChecklist.createdAt + i * TWENTY_FOUR_HOURS,
-              };
-            }
-
-            // Помечаем все задачи как пропущенные
-            missedChecklist.status = 'missed';
-            missedChecklist.tasks = missedChecklist.tasks.map((task) => ({
-              ...task,
-              status: 'missed' as TaskStatus,
-            }));
-
-            await checklistStorage.saveChecklist(missedChecklist);
-            console.log(`Generated missed checklist for ${missedDateString} (day ${i} of absence)`);
-          }
-        }
-      }
+      // Получаем последний чеклист
+      const lastChecklist = await checklistStorage.getLastChecklist();
 
       let checklist: Checklist | null = null;
 
-      if (lastChecklist && now - lastChecklist.createdAt < TWENTY_FOUR_HOURS) {
-        // Если прошло менее 24 часов, используем последний чеклист (независимо от даты)
-        console.log(`Less than 24 hours since last checklist creation, using existing checklist`);
-        checklist = lastChecklist;
-      } else {
-        // Проверяем, не пропустил ли пользователь более 3 дней
-        if (daysSinceLastVisit > MAX_MISSED_DAYS) {
-          // Если пользователь не заходил более 3 дней, создаем новый чеклист
-          // Это становится новым временем отсчета для генераций и уведомлений
-          console.log(
-            `User hasn't visited for ${daysSinceLastVisit} days (more than ${MAX_MISSED_DAYS}), creating new checklist as reset point`,
-          );
+      // Если есть последний чеклист и он выполнен (все задачи done) - генерируем новый
+      if (lastChecklist && lastChecklist.status === 'done') {
+        // Если есть последний чеклист и он выполнен - генерируем новый
+        console.log('Last checklist is done, generating new one');
+        const selectedRooms = rooms.filter((r) => r.checked);
+        console.log(`Selected rooms count: ${selectedRooms.length}, total rooms: ${rooms.length}`);
+        if (selectedRooms.length > 0) {
+          checklist = await generateChecklist(rooms, today, profile);
+          console.log(`Generated checklist with ${checklist.tasks.length} tasks`);
+          if (checklist.tasks.length === 0) {
+            console.warn('Generated checklist is empty! This should not happen.');
+          }
+          await checklistStorage.saveChecklist(checklist);
+        } else {
+          console.log('No rooms selected or rooms not loaded yet, skipping checklist creation');
+          // Не создаем пустой чеклист - просто используем последний выполненный
+          checklist = lastChecklist;
+        }
+      } else if (lastChecklist && lastChecklist.status === 'in_progress') {
+        // Если есть незавершенный чеклист - проверяем, не пустой ли он
+        if (lastChecklist.tasks.length === 0) {
+          // Если чеклист пустой - удаляем его и генерируем новый
+          console.log('Found empty in-progress checklist, removing it and generating new one');
+          const allChecklists = await checklistStorage.getChecklists();
+          const filteredChecklists = allChecklists.filter((c) => c.id !== lastChecklist.id);
+          await checklistStorage.saveChecklists(filteredChecklists);
 
-          // Сохраняем timestamp последней генерации (новое время отсчета)
-          await storage.setLastGenerationTimestamp(now);
-
-          // Создаем новый чеклист
           const selectedRooms = rooms.filter((r) => r.checked);
+          console.log(
+            `Selected rooms count: ${selectedRooms.length}, total rooms: ${rooms.length}`,
+          );
           if (selectedRooms.length > 0) {
             checklist = await generateChecklist(rooms, today, profile);
+            console.log(`Generated new checklist with ${checklist.tasks.length} tasks`);
+            if (checklist.tasks.length === 0) {
+              console.warn('Generated checklist is empty! This should not happen.');
+            }
             await checklistStorage.saveChecklist(checklist);
-            console.log(
-              `New checklist generated after ${daysSinceLastVisit} days absence - new reset point`,
-            );
           } else {
-            // Если нет выбранных комнат, создаем пустой чеклист
-            checklist = {
-              id: `checklist-${today}`,
-              date: today,
-              status: 'in_progress',
-              tasks: [],
-              createdAt: now,
-            };
-            await checklistStorage.saveChecklist(checklist);
+            console.log('No rooms selected or rooms not loaded yet, skipping checklist creation');
+            // Не создаем пустой чеклист - вернем null, чеклист создастся когда комнаты загрузятся
+            checklist = null;
           }
         } else {
-          // Прошло более 24 часов или нет последнего чеклиста - создаем новый
-          // Проверяем, что есть выбранные комнаты для генерации
-          const selectedRooms = rooms.filter((r) => r.checked);
-
-          // Если это первая генерация, устанавливаем timestamp последней генерации
-          const lastGenerationTimestamp = await storage.getLastGenerationTimestamp();
-          if (!lastGenerationTimestamp) {
-            await storage.setLastGenerationTimestamp(now);
+          // Если есть задачи - используем его
+          console.log('Using existing in-progress checklist');
+          checklist = lastChecklist;
+        }
+      } else {
+        // Нет чеклиста - создаем новый
+        console.log('No checklist found, generating new one');
+        const selectedRooms = rooms.filter((r) => r.checked);
+        console.log(`Selected rooms count: ${selectedRooms.length}, total rooms: ${rooms.length}`);
+        if (selectedRooms.length > 0) {
+          checklist = await generateChecklist(rooms, today, profile);
+          console.log(`Generated checklist with ${checklist.tasks.length} tasks`);
+          if (checklist.tasks.length === 0) {
+            console.warn('Generated checklist is empty! This should not happen.');
           }
-
-          if (selectedRooms.length > 0) {
-            checklist = await generateChecklist(rooms, today, profile);
-            await checklistStorage.saveChecklist(checklist);
-            console.log(`Checklist generated for ${today} (24 hours passed since last)`);
-          } else {
-            // Если нет выбранных комнат, создаем пустой чеклист
-            checklist = {
-              id: `checklist-${today}`,
-              date: today,
-              status: 'in_progress',
-              tasks: [],
-              createdAt: now,
-            };
-            await checklistStorage.saveChecklist(checklist);
-          }
+          await checklistStorage.saveChecklist(checklist);
+        } else {
+          console.log('No rooms selected or rooms not loaded yet, skipping checklist creation');
+          // Не создаем пустой чеклист - вернем null, чеклист создастся когда комнаты загрузятся
+          checklist = null;
         }
       }
 
@@ -144,12 +115,16 @@ export function useChecklist(rooms: Room[]) {
       console.error('Error loading checklist:', error);
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
-  }, [rooms, profile]);
+  }, [rooms, profile, profileLoading]);
 
   useEffect(() => {
-    loadTodayChecklist();
-  }, [loadTodayChecklist]);
+    // Ждем загрузки профиля и комнат перед вызовом loadTodayChecklist
+    if (!profileLoading && profile && rooms && rooms.length > 0) {
+      loadTodayChecklist();
+    }
+  }, [loadTodayChecklist, profileLoading, profile, rooms]);
 
   const updateTaskStatus = useCallback(
     async (taskId: string, status: TaskStatus) => {
@@ -179,18 +154,35 @@ export function useChecklist(rooms: Room[]) {
       };
 
       await checklistStorage.saveChecklist(updatedChecklist);
+
+      // Проверяем, был ли чеклист уже выполнен до этого изменения
+      const wasAlreadyDone = currentChecklist.status === 'done';
+
       setCurrentChecklist(updatedChecklist);
 
-      // Обновляем прогресс чубрика при изменении статуса чеклиста
-      // Импортируем динамически функцию обновления прогресса
-      try {
-        const { updateChubrikProgress } = await import('@/hooks/useChubrikProgress');
-        await updateChubrikProgress();
-      } catch (error) {
-        console.error('Error updating chubrik progress:', error);
+      // Обновляем прогресс чубрика ТОЛЬКО когда чеклист переходит в статус 'done'
+      // (был 'in_progress', стал 'done') - вызываем один раз
+      if (checklistStatus === 'done' && !wasAlreadyDone) {
+        console.log('Checklist completed, updating chubrik progress');
+        try {
+          const { updateChubrikProgress, triggerReloadProgress } = await import(
+            '@/hooks/useChubrikProgress'
+          );
+          await updateChubrikProgress();
+          // Перезагружаем профиль после обновления прогресса, чтобы обновился chubriks и интерфейс
+          await loadProfile();
+          // Явно вызываем перезагрузку прогресса в хуке, чтобы обновилось состояние
+          await triggerReloadProgress();
+        } catch (error) {
+          console.error('Error updating chubrik progress:', error);
+        }
+
+        // Генерируем новый чеклист после обновления прогресса
+        console.log('Checklist completed, loading new one');
+        await loadTodayChecklist();
       }
     },
-    [currentChecklist],
+    [currentChecklist, rooms, profile],
   );
 
   const toggleTask = useCallback(

@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
 import { Checklist } from '@/types/checklist';
 import { checklistStorage } from '@/utils/checklistStorage';
-import { formatDate } from '@/utils/checklistGenerator';
-import { getTodayDateString } from '@/utils/checklistGenerator';
+import { useEffect, useState } from 'react';
 
 export function useChecklistsStats() {
   const [checklists, setChecklists] = useState<Checklist[]>([]);
@@ -15,24 +13,24 @@ export function useChecklistsStats() {
   const loadChecklists = async () => {
     try {
       const allChecklists = await checklistStorage.getChecklists();
-      
+
       // Статистика учитывает ВСЕ чеклисты (и до пропуска, и после)
       // Обновляем статусы старых чеклистов по времени (24 часа), а не по дате
       const now = Date.now();
       const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-      
-      const updatedChecklists = allChecklists.map(checklist => {
+
+      const updatedChecklists = allChecklists.map((checklist) => {
         // Если чеклист не выполнен и прошло более 24 часов с создания - помечаем как пропущенный (ушедший чубрик)
         if (checklist.status === 'in_progress') {
           const timeSinceCreation = now - checklist.createdAt;
-          
+
           // Если прошло более 24 часов, помечаем как пропущенный
           if (timeSinceCreation >= TWENTY_FOUR_HOURS) {
-            const allDone = checklist.tasks.every(t => t.status === 'done');
+            const allDone = checklist.tasks.every((t) => t.status === 'done');
             return {
               ...checklist,
               status: allDone ? 'done' : 'missed',
-              tasks: checklist.tasks.map(task => {
+              tasks: checklist.tasks.map((task) => {
                 if (task.status === 'in_progress') {
                   return { ...task, status: 'missed' as const };
                 }
@@ -48,7 +46,7 @@ export function useChecklistsStats() {
       const hasChanges = JSON.stringify(allChecklists) !== JSON.stringify(updatedChecklists);
       if (hasChanges) {
         await checklistStorage.saveChecklists(updatedChecklists);
-        
+
         // Обновляем прогресс чубрика при изменении статусов чеклистов
         try {
           const { updateChubrikProgress } = await import('@/hooks/useChubrikProgress');
@@ -67,19 +65,15 @@ export function useChecklistsStats() {
   };
 
   // Подсчет статистики
-  const totalClosed = checklists.filter(c => c.status === 'done').length;
-  
+  const totalClosed = checklists.filter((c) => c.status === 'done').length;
+
   // Рекорд закрытых подряд
   const recordStreak = (() => {
     let best = 0;
     let current = 0;
-    
-    // Сортируем по дате (старые первыми)
-    const sorted = [...checklists].sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
-      return dateA - dateB;
-    });
+
+    // Сортируем по времени создания (старые первыми), а не по дате
+    const sorted = [...checklists].sort((a, b) => a.createdAt - b.createdAt);
 
     for (const checklist of sorted) {
       if (checklist.status === 'done') {
@@ -89,7 +83,7 @@ export function useChecklistsStats() {
         current = 0;
       }
     }
-    
+
     return best;
   })();
 
@@ -101,4 +95,3 @@ export function useChecklistsStats() {
     reload: loadChecklists,
   };
 }
-

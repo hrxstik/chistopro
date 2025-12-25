@@ -1,5 +1,6 @@
 // app/(tabs)/index.tsx
-import React, { useEffect } from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect } from 'react';
 import { ActivityIndicator, FlatList, Image, StyleSheet, Text, View } from 'react-native';
 
 import GiftIcon from '@/assets/icons/gift.svg';
@@ -8,10 +9,8 @@ import { Checkbox } from '@/components/Checkbox';
 import { TaskTimeInfo } from '@/components/TaskTimeInfo';
 import { Colors } from '@/constants/colors';
 import { useChecklist } from '@/hooks/useChecklist';
-import { useChubrikProgress } from '@/hooks/useChubrikProgress';
+import { TOTAL_DAYS, useChubrikProgress } from '@/hooks/useChubrikProgress';
 import { useProfile } from '@/hooks/useProfile';
-
-const TOTAL_DAYS = 28;
 
 // Список имен чубриков
 const CHUBRIK_NAMES: Record<string, string> = {
@@ -21,12 +20,16 @@ const CHUBRIK_NAMES: Record<string, string> = {
 
 // Функция для получения изображения чубрика на основе ID и прогресса
 function getMascotSource(chubrikId: string, progress: number) {
-  // Определяем стадию роста
+  // Определяем стадию роста:
+  // dirty1: 0-2 чеклиста
+  // dirty2: 3-4 чеклиста
+  // dirty3: 5-6 чеклистов
+  // чистый: 7-8 чеклистов
   let stage = 1;
-  if (progress <= 6) stage = 1;
-  else if (progress <= 13) stage = 2;
-  else if (progress <= 20) stage = 3;
-  else stage = 4; // Чистый (progress > 20 или >= 28)
+  if (progress <= 2) stage = 1; // dirty1 - самый грязный (0-2)
+  else if (progress <= 4) stage = 2; // dirty2 - средний (3-4)
+  else if (progress <= 6) stage = 3; // dirty3 - самый чистый (5-6)
+  else stage = 4; // Чистый (progress >= 7, т.е. 7-8)
 
   // Выбираем изображение в зависимости от ID чубрика и стадии
   if (stage === 4) {
@@ -65,16 +68,16 @@ function getChubrikName(chubrikId: string): string {
 
 // Уровни чубрика на основе прогресса
 function getLevelText(progress: number, level: number): string {
-  if (progress >= 28) {
+  if (progress >= TOTAL_DAYS) {
     return 'Привычка сформирована';
   }
   return `${level} уровень`;
 }
 
 export default function HomeScreen() {
-  const { profile } = useProfile();
+  const { profile, loadProfile } = useProfile();
   const rooms = profile?.rooms || [];
-  const { currentChecklist, loading, toggleTask } = useChecklist(rooms);
+  const { currentChecklist, loading, toggleTask, reloadChecklist } = useChecklist(rooms);
   const {
     progress: chubrikProgress,
     currentLevel,
@@ -82,20 +85,39 @@ export default function HomeScreen() {
     reload: reloadProgress,
   } = useChubrikProgress();
 
-  // Обновляем прогресс при изменении чеклиста
+  // Обновляем данные при фокусе на экране (например, после очистки статистики)
+  useFocusEffect(
+    useCallback(() => {
+      // 1. Получаем профиль
+      loadProfile();
+      // 2. Проверяем есть ли чеклист, генерируем если нет (внутри useChecklist)
+      reloadChecklist();
+      // 3. Обновляем прогресс чубрика на основе профиля
+      reloadProgress();
+    }, []),
+  );
+
+  // Обновляем прогресс при изменении чеклиста (включая после выполнения)
+  // Но НЕ вызываем updateChubrikProgress здесь - он вызывается в useChecklist когда чеклист завершен
+  // Здесь только обновляем отображение если статус изменился
   useEffect(() => {
     if (currentChecklist) {
+      // Обновляем профиль для отображения актуальных данных
+      loadProfile();
+      // Перезагружаем прогресс для отображения (но не обновляем сам прогресс - это делается в useChecklist)
       reloadProgress();
     }
-  }, [currentChecklist, reloadProgress]);
+  }, [currentChecklist?.status]);
 
-  // Определяем текущий ID чубрика (количество выращенных + 1)
+  // Определяем текущий ID чубрика (количество выращенных + 1) из профиля
   const currentChubrikId = profile ? String((profile.chubriks || 0) + 1) : '1';
   const chubrikName = getChubrikName(currentChubrikId);
 
-  const progress = Math.max(0, Math.min(1, chubrikProgress / TOTAL_DAYS));
-  const level = getLevelText(chubrikProgress, currentLevel);
-  const mascotSource = getMascotSource(currentChubrikId, chubrikProgress);
+  // Определяем прогресс и стадию из хука (синхронизировано с профилем)
+  const progressValue = chubrikProgress; // Используем значение из хука, которое обновляется автоматически
+  const progress = Math.max(0, Math.min(1, progressValue / TOTAL_DAYS));
+  const level = getLevelText(progressValue, currentLevel);
+  const mascotSource = getMascotSource(currentChubrikId, progressValue);
 
   if (loading || progressLoading) {
     return (

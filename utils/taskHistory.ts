@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Checklist } from '@/types/checklist';
 
 const TASK_HISTORY_KEY = '@chistopro:taskHistory';
-const LAUNDRY_SEQUENCE_KEY = '@chistopro:laundrySequence';
+const LAUNDRY_GENERATION_KEY = '@chistopro:laundryGeneration';
 
 // История задач для комнаты
 export type RoomTaskHistory = {
@@ -12,12 +12,10 @@ export type RoomTaskHistory = {
   taskTypes: string[]; // Типы задач для проверки дубликатов в один день
 };
 
-// История последовательности стирки (задачи 32, 33, 34)
-export type LaundrySequence = {
-  lastTask32Date: string | null; // Дата последней задачи 32
-  lastTask33Date: string | null; // Дата последней задачи 33
-  lastTask34Date: string | null; // Дата последней задачи 34
-  cooldownUntil: string | null; // Дата до которой нельзя ставить задачу 32 (через неделю после 34)
+// Система отслеживания генераций для стирки
+export type LaundryGeneration = {
+  generationCount: number; // Количество генераций с последнего цикла стирки (0-10)
+  currentLaundryStep: number; // Текущий шаг в цикле стирки (0 = нет стирки, 1 = задача 32, 2 = задача 33, 3 = задача 34)
 };
 
 export const taskHistory = {
@@ -119,36 +117,83 @@ export const taskHistory = {
     return false;
   },
 
-  // Получает историю последовательности стирки
-  async getLaundrySequence(): Promise<LaundrySequence> {
+  // Получает состояние генераций стирки
+  async getLaundryGeneration(): Promise<LaundryGeneration> {
     try {
-      const jsonValue = await AsyncStorage.getItem(LAUNDRY_SEQUENCE_KEY);
+      const jsonValue = await AsyncStorage.getItem(LAUNDRY_GENERATION_KEY);
       return jsonValue != null ? JSON.parse(jsonValue) : {
-        lastTask32Date: null,
-        lastTask33Date: null,
-        lastTask34Date: null,
-        cooldownUntil: null,
+        generationCount: 0,
+        currentLaundryStep: 0,
       };
     } catch (error) {
-      console.error('Error getting laundry sequence:', error);
+      console.error('Error getting laundry generation:', error);
       return {
-        lastTask32Date: null,
-        lastTask33Date: null,
-        lastTask34Date: null,
-        cooldownUntil: null,
+        generationCount: 0,
+        currentLaundryStep: 0,
       };
     }
   },
 
-  // Сохраняет историю последовательности стирки
-  async saveLaundrySequence(sequence: LaundrySequence): Promise<void> {
+  // Сохраняет состояние генераций стирки
+  async saveLaundryGeneration(generation: LaundryGeneration): Promise<void> {
     try {
-      const jsonValue = JSON.stringify(sequence);
-      await AsyncStorage.setItem(LAUNDRY_SEQUENCE_KEY, jsonValue);
+      const jsonValue = JSON.stringify(generation);
+      await AsyncStorage.setItem(LAUNDRY_GENERATION_KEY, jsonValue);
     } catch (error) {
-      console.error('Error saving laundry sequence:', error);
+      console.error('Error saving laundry generation:', error);
       throw error;
     }
+  },
+
+  // Определяет, какую задачу стирки нужно поставить на основе текущего счетчика, затем увеличивает счетчик
+  async getAndIncrementLaundryGeneration(): Promise<{ taskId: number | null; newGeneration: LaundryGeneration }> {
+    const current = await this.getLaundryGeneration();
+    let newGeneration: LaundryGeneration;
+    let taskId: number | null = null;
+
+    // Определяем, какую задачу нужно поставить на основе ТЕКУЩЕГО счетчика
+    if (current.generationCount === 0) {
+      // Первая генерация цикла - задача 32
+      taskId = 32;
+      newGeneration = {
+        generationCount: 1,
+        currentLaundryStep: 1,
+      };
+    } else if (current.generationCount === 1) {
+      // Вторая генерация цикла - задача 33
+      taskId = 33;
+      newGeneration = {
+        generationCount: 2,
+        currentLaundryStep: 2,
+      };
+    } else if (current.generationCount === 2) {
+      // Третья генерация цикла - задача 34
+      taskId = 34;
+      newGeneration = {
+        generationCount: 3,
+        currentLaundryStep: 3,
+      };
+    } else if (current.generationCount >= 3 && current.generationCount < 10) {
+      // Генерации 4-10: нет задач стирки, просто увеличиваем счетчик
+      taskId = null;
+      const nextCount = current.generationCount + 1;
+      newGeneration = {
+        generationCount: nextCount,
+        currentLaundryStep: 0,
+      };
+      // Если достигли 10, на следующей генерации начнется новый цикл
+    } else {
+      // generationCount = 10: конец цикла, начинаем новый
+      // Ставим задачу 32 и сбрасываем счетчик на 1
+      taskId = 32;
+      newGeneration = {
+        generationCount: 1,
+        currentLaundryStep: 1,
+      };
+    }
+
+    await this.saveLaundryGeneration(newGeneration);
+    return { taskId, newGeneration };
   },
 
   // Обновляет историю после генерации чеклиста
@@ -189,6 +234,17 @@ export const taskHistory = {
           await this.addTaskToHistory(task.roomName, taskId, taskDef.type, date);
         }
       }
+    }
+  },
+
+  // Очищает всю историю задач
+  async clearAllHistory(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(TASK_HISTORY_KEY);
+      await AsyncStorage.removeItem(LAUNDRY_GENERATION_KEY);
+    } catch (error) {
+      console.error('Error clearing task history:', error);
+      throw error;
     }
   },
 };

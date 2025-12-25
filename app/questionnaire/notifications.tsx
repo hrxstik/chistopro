@@ -1,19 +1,17 @@
 import { useRouter } from 'expo-router';
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { OnboardingCloud } from '@/components/OnboardingCloud';
 import { QuestionnaireLayout } from '@/components/QuestionnaireLayout';
 import { Colors } from '@/constants/colors';
 import { useQuestionnaire } from '@/contexts/QuestionnaireContext';
-import { storage } from '@/utils/storage';
 import { UserProfile } from '@/types/profile';
-import { requestNotificationPermissions, scheduleDailyNotification, cancelDailyNotification } from '@/utils/notifications';
+import {
+  cancelDailyNotification,
+  requestNotificationPermissions,
+  scheduleDailyNotification,
+} from '@/utils/notifications';
+import { storage } from '@/utils/storage';
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -28,7 +26,7 @@ export default function NotificationsScreen() {
         profession: data.profession,
         householdMembers: data.householdMembers,
         area: data.area,
-        petsCount: data.petsCount,
+        hasPets: data.hasPets,
         rooms: data.rooms,
         notificationsEnabled,
         tasksDone: 0,
@@ -39,9 +37,9 @@ export default function NotificationsScreen() {
         chubrikMaxLevel: 1,
         avatarIndex: 0,
       };
-      
+
       await storage.saveProfile(profile);
-      
+
       // Настраиваем или отменяем уведомления в зависимости от выбора пользователя
       if (notificationsEnabled) {
         const hasPermission = await requestNotificationPermissions();
@@ -53,7 +51,7 @@ export default function NotificationsScreen() {
       } else {
         await cancelDailyNotification();
       }
-      
+
       reset(); // Очищаем контекст после сохранения
       router.push('/tabs');
     } catch (error) {
@@ -76,26 +74,18 @@ export default function NotificationsScreen() {
       showBack
       header={
         <View style={styles.header}>
-          <OnboardingCloud
-            text={'Рад знакомству!\nПозволь мне\nнапоминать тебе об уборке'}
-          />
+          <OnboardingCloud text={'Рад знакомству!\nПозволь мне\nнапоминать тебе об уборке'} />
         </View>
       }
-      footer={null}
-    >
+      footer={null}>
       <View style={styles.content}>
         <View style={styles.mascotWrapper}>
-          <Image
-            source={require('@/assets/images/chubrik1_dirty1.png')}
-            style={styles.mascot}
-          />
+          <Image source={require('@/assets/images/chubrik1_dirty1.png')} style={styles.mascot} />
 
           {/* карточка, перекрывающая нижнюю часть чубрика */}
           <View style={styles.card}>
             <Text style={styles.questionText}>
-              Разрешить{' '}
-              <Text style={styles.appName}>ЧистоПро</Text>{' '}
-              отправлять вам уведомления?
+              Разрешить <Text style={styles.appName}>ЧистоПро</Text> отправлять вам уведомления?
             </Text>
 
             <View style={styles.buttons}>
@@ -116,7 +106,7 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    flex: 1,            // растягиваем хедер на всю ширину
+    flex: 1, // растягиваем хедер на всю ширину
     alignItems: 'center', // и уже внутри центрируем облако
   },
   content: {

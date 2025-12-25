@@ -29,12 +29,8 @@ export function useAchievements() {
       // Статистика учитывает ВСЕ чеклисты (и до пропуска, и после)
       const checklists = await checklistStorage.getChecklists();
       
-      // Сортируем по дате (старые первыми)
-      const sorted = [...checklists].sort((a, b) => {
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
-        return dateA - dateB;
-      });
+      // Сортируем по времени создания (старые первыми), а не по дате
+      const sorted = [...checklists].sort((a, b) => a.createdAt - b.createdAt);
 
       // Максимальный достигнутый уровень чубрика (сохраняется навсегда)
       // Получаем из профиля, так как это метрика которая не сбрасывается

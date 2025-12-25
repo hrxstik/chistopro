@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Checklist } from '@/types/checklist';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CHECKLISTS_KEY = '@chistopro:checklists';
 
@@ -27,7 +27,7 @@ export const checklistStorage = {
   async getChecklistByDate(date: string): Promise<Checklist | null> {
     try {
       const checklists = await this.getChecklists();
-      return checklists.find(c => c.date === date) || null;
+      return checklists.find((c) => c.date === date) || null;
     } catch (error) {
       console.error('Error getting checklist by date:', error);
       return null;
@@ -39,7 +39,7 @@ export const checklistStorage = {
     try {
       const checklists = await this.getChecklists();
       if (checklists.length === 0) return null;
-      
+
       // Сортируем по времени создания (новые первыми)
       const sorted = [...checklists].sort((a, b) => b.createdAt - a.createdAt);
       return sorted[0] || null;
@@ -52,33 +52,24 @@ export const checklistStorage = {
   async saveChecklist(checklist: Checklist): Promise<void> {
     try {
       const checklists = await this.getChecklists();
-      
-      // Защита от дублирования: проверяем, есть ли уже чеклист на эту дату
-      const existingByDate = checklists.find(c => c.date === checklist.date);
-      if (existingByDate && existingByDate.id !== checklist.id) {
-        // Если уже есть чеклист на эту дату с другим ID, не создаем новый
-        console.warn(`Checklist for date ${checklist.date} already exists, skipping duplicate`);
-        return;
-      }
-      
-      const index = checklists.findIndex(c => c.id === checklist.id);
-      
+
+      const index = checklists.findIndex((c) => c.id === checklist.id);
+
       if (index >= 0) {
         // Обновляем существующий чеклист
+        console.log(`Updating existing checklist with id: ${checklist.id}`);
         checklists[index] = checklist;
       } else {
-        // Добавляем новый чеклист
+        // Добавляем новый чеклист (разрешаем несколько чеклистов на одну дату)
+        console.log(`Adding new checklist with id: ${checklist.id}, date: ${checklist.date}`);
         checklists.push(checklist);
       }
-      
-      // Сортируем по дате (новые первыми)
-      checklists.sort((a, b) => {
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
-        return dateB - dateA;
-      });
-      
+
+      // Сортируем по времени создания (новые первыми), а не по дате
+      checklists.sort((a, b) => b.createdAt - a.createdAt);
+
       await this.saveChecklists(checklists);
+      console.log(`Saved checklist. Total checklists: ${checklists.length}`);
     } catch (error) {
       console.error('Error saving checklist:', error);
       throw error;
@@ -94,4 +85,3 @@ export const checklistStorage = {
     }
   },
 };
-

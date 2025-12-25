@@ -36,15 +36,15 @@ export default function Step4() {
   const scrollRef = useRef<ScrollView | null>(null);
 
   const [area, setArea] = useState(data.area);
-  const [petsCount, setPetsCount] = useState(data.petsCount);
+  const [hasPets, setHasPets] = useState(data.hasPets);
   const [rooms, setRooms] = useState<Room[]>(
     data.rooms.length > 0 ? data.rooms : DEFAULT_ROOMS
   );
 
   useEffect(() => {
-    updateStep4({ area, petsCount, rooms });
+    updateStep4({ area, hasPets, rooms });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [area, petsCount, rooms]);
+  }, [area, hasPets, rooms]);
 
   const createId = () => Date.now().toString();
 
@@ -135,9 +135,8 @@ export default function Step4() {
     setArea(clampNumeric(text, 1, 10000));
   };
 
-  const handleChangePets = (text: string) => {
-    // Ограничение: минимум 0, максимум 100
-    setPetsCount(clampNumeric(text, 0, 100));
+  const handleTogglePets = () => {
+    setHasPets((prev) => !prev);
   };
 
   // хотя бы одна выбранная комната
@@ -162,7 +161,6 @@ export default function Step4() {
 
   const isValid =
     area.trim() !== '' &&
-    petsCount.trim() !== '' &&
     hasSelectedRoom &&
     allSelectedHaveName &&
     allSelectedHaveValidCount;
@@ -205,14 +203,11 @@ export default function Step4() {
           <Text style={styles.areaSuffix}>м²</Text>
         </View>
 
-        {/* Кол-во животных */}
-        <Text style={styles.label}>Количество домашних животных:</Text>
-        <TextInput
-          style={styles.input}
-          value={petsCount}
-          onChangeText={handleChangePets}
-          keyboardType="numeric"
-        />
+        {/* Домашние животные */}
+        <View style={styles.petsRow}>
+          <Text style={styles.label}>Есть домашние животные:</Text>
+          <Checkbox checked={hasPets} onToggle={handleTogglePets} />
+        </View>
 
         {/* Типы комнат */}
         <View style={styles.roomsHeader}>
@@ -371,5 +366,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'flex-start',
     marginTop: 8,
+  },
+  petsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
 });

@@ -14,24 +14,43 @@ export function useProfile() {
     try {
       const savedProfile = await storage.getProfile();
       if (savedProfile) {
+        // Создаем новый объект для миграции (чтобы избежать ошибки "read-only")
+        let updatedProfile: UserProfile = { ...savedProfile };
+        let needsSave = false;
+
         // Инициализируем поля прогресса чубрика, если их нет
-        if (savedProfile.chubrikProgress === undefined) {
-          savedProfile.chubrikProgress = 0;
+        if (updatedProfile.chubrikProgress === undefined) {
+          updatedProfile = { ...updatedProfile, chubrikProgress: 0 };
+          needsSave = true;
         }
-        if (savedProfile.chubrikMaxLevel === undefined) {
-          savedProfile.chubrikMaxLevel = 1;
+        if (updatedProfile.chubrikMaxLevel === undefined) {
+          updatedProfile = { ...updatedProfile, chubrikMaxLevel: 1 };
+          needsSave = true;
         }
         
-        // Удаляем поле timezone, если оно есть (миграция для старых профилей)
-        if ('timezone' in savedProfile) {
-          const { timezone, ...profileWithoutTimezone } = savedProfile as any;
-          await storage.saveProfile(profileWithoutTimezone);
-          setProfile(profileWithoutTimezone);
-        } else {
-          // Сохраняем обновленный профиль
-          await storage.saveProfile(savedProfile);
-          setProfile(savedProfile);
+        // Миграция: удаляем поле timezone, если оно есть
+        if ('timezone' in updatedProfile) {
+          const { timezone, ...profileWithoutTimezone } = updatedProfile as any;
+          updatedProfile = profileWithoutTimezone;
+          needsSave = true;
         }
+        
+        // Миграция: преобразуем petsCount (string) в hasPets (boolean)
+        if ('petsCount' in updatedProfile && typeof (updatedProfile as any).petsCount === 'string') {
+          const petsCount = (updatedProfile as any).petsCount;
+          const { petsCount: _, ...profileWithoutPetsCount } = updatedProfile as any;
+          updatedProfile = {
+            ...profileWithoutPetsCount,
+            hasPets: parseInt(petsCount) > 0,
+          };
+          needsSave = true;
+        }
+        
+        // Сохраняем обновленный профиль только если были изменения
+        if (needsSave) {
+          await storage.saveProfile(updatedProfile);
+        }
+        setProfile(updatedProfile);
       } else {
         setProfile(savedProfile);
       }

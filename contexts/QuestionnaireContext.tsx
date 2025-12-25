@@ -16,7 +16,7 @@ type QuestionnaireData = {
   
   // Step 4
   area: string;
-  petsCount: string;
+  hasPets: boolean;
   rooms: Room[];
 };
 
@@ -25,7 +25,7 @@ type QuestionnaireContextType = {
   updateStep1: (data: Partial<Pick<QuestionnaireData, 'name' | 'age' | 'gender'>>) => void;
   updateStep2: (profession: string) => void;
   updateStep3: (members: HouseholdMember[]) => void;
-  updateStep4: (data: Partial<Pick<QuestionnaireData, 'area' | 'petsCount' | 'rooms'>>) => void;
+  updateStep4: (data: Partial<Pick<QuestionnaireData, 'area' | 'hasPets' | 'rooms'>>) => void;
   reset: () => void;
 };
 
@@ -36,7 +36,7 @@ const initialState: QuestionnaireData = {
   profession: '',
   householdMembers: [],
   area: '',
-  petsCount: '',
+  hasPets: false,
   rooms: [],
 };
 
