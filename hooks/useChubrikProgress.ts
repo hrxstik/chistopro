@@ -1,3 +1,4 @@
+import { Checklist } from '@/types/checklist';
 import { storage } from '@/utils/storage';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -44,7 +45,8 @@ function calculateLevel(progressValue: number): number {
 }
 
 // Экспортируем функцию для обновления прогресса из других хуков
-export async function updateChubrikProgress(): Promise<void> {
+// Принимает опциональный чеклист - если передан, использует его, иначе получает последний
+export async function updateChubrikProgress(completedChecklist?: Checklist | null): Promise<void> {
   try {
     const { storage } = await import('@/utils/storage');
     const { checklistStorage } = await import('@/utils/checklistStorage');
@@ -52,9 +54,15 @@ export async function updateChubrikProgress(): Promise<void> {
     const profile = await storage.getProfile();
     if (!profile) return;
 
-    // Получаем последний чеклист для проверки его статуса
-    const lastChecklist = await checklistStorage.getLastChecklist();
-    if (!lastChecklist) return;
+    // Если передан завершенный чеклист, используем его, иначе получаем последний
+    let checklistToCheck: Checklist | null = null;
+    if (completedChecklist) {
+      checklistToCheck = completedChecklist;
+    } else {
+      const lastChecklist = await checklistStorage.getLastChecklist();
+      if (!lastChecklist) return;
+      checklistToCheck = lastChecklist;
+    }
 
     const currentProgress = profile.chubrikProgress || 0;
     const currentChubriks = profile.chubriks || 0;
@@ -68,7 +76,7 @@ export async function updateChubrikProgress(): Promise<void> {
     // 1. Если чеклист выполнен - прогресс++
     // 2. Если пропущен - прогресс = 0
     // 3. Если прогресс достиг максимума - прогресс = 0 и chubriks++
-    if (lastChecklist.status === 'done') {
+    if (checklistToCheck.status === 'done') {
       // Чеклист выполнен - увеличиваем прогресс
       newProgress = Math.min(currentProgress + 1, TOTAL_DAYS);
 
@@ -91,7 +99,7 @@ export async function updateChubrikProgress(): Promise<void> {
           }, resetting progress`,
         );
       }
-    } else if (lastChecklist.status === 'missed') {
+    } else if (checklistToCheck.status === 'missed') {
       // Чеклист пропущен - сбрасываем прогресс
       newProgress = 0;
       // chubrikMaxLevel не меняется при пропуске

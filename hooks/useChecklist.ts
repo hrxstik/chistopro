@@ -168,7 +168,8 @@ export function useChecklist(rooms: Room[]) {
           const { updateChubrikProgress, triggerReloadProgress } = await import(
             '@/hooks/useChubrikProgress'
           );
-          await updateChubrikProgress();
+          // Передаем завершенный чеклист напрямую, чтобы гарантировать правильное обновление прогресса
+          await updateChubrikProgress(updatedChecklist);
           // Перезагружаем профиль после обновления прогресса, чтобы обновился chubriks и интерфейс
           await loadProfile();
           // Явно вызываем перезагрузку прогресса в хуке, чтобы обновилось состояние
