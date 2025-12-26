@@ -362,6 +362,30 @@ function hasChildrenUnder7(householdMembers: HouseholdMember[]): boolean {
   });
 }
 
+// Находит детей от 3 до 10 лет включительно
+function getChildrenAged3To10(householdMembers: HouseholdMember[]): HouseholdMember[] {
+  return householdMembers.filter((member) => {
+    const age = parseInt(member.age) || 0;
+    return age >= 3 && age <= 10;
+  });
+}
+
+// Проверяет, есть ли дети до 10 лет включительно
+function hasChildrenUpTo10(householdMembers: HouseholdMember[]): boolean {
+  return householdMembers.some((member) => {
+    const age = parseInt(member.age) || 0;
+    return age <= 10;
+  });
+}
+
+// Проверяет, есть ли дети младше 3 лет
+function hasChildrenUnder3(householdMembers: HouseholdMember[]): boolean {
+  return householdMembers.some((member) => {
+    const age = parseInt(member.age) || 0;
+    return age < 3;
+  });
+}
+
 // Получает количество сожителей
 function getHouseholdMembersCount(householdMembers: HouseholdMember[]): number {
   return householdMembers.length;
@@ -373,8 +397,8 @@ function getCleaningParticipants(
   householdMembers: HouseholdMember[],
   userProfession?: string,
 ): Array<{ id: string | null; name: string; maxMinutes: number }> {
-  // Пользователь: RELAX_PROFESSIONS дают 20 минут, остальные - 15 минут
-  const userMaxMinutes = RELAX_PROFESSIONS.includes(userProfession || '') ? 20 : 15;
+  // Пользователь: работающие - 15 минут, неработающие - 20 минут
+  const userMaxMinutes = isWorkingProfession(userProfession) ? 15 : 20;
 
   const participants: Array<{ id: string | null; name: string; maxMinutes: number }> = [
     { id: null, name: 'Вы', maxMinutes: userMaxMinutes },
@@ -384,35 +408,41 @@ function getCleaningParticipants(
   householdMembers.forEach((member) => {
     const age = parseInt(member.age) || 0;
     if (age > 10) {
-      // Для сожителей: RELAX_PROFESSIONS дают 20 минут, WORK_PROFESSIONS - 10 минут
-      let maxMinutes = 0;
-      if (RELAX_PROFESSIONS.includes(member.profession)) {
-        maxMinutes = 20;
-      } else if (WORK_PROFESSIONS.includes(member.profession)) {
-        maxMinutes = 10;
-      } else {
-        // Если профессия не указана или не в списке - используем минимальный потолок
-        maxMinutes = 10;
-      }
-
+      // Работающие сожители - 15 минут, неработающие - 20 минут
+      const maxMinutes = isWorkingProfession(member.profession) ? 15 : 20;
       participants.push({ id: member.id, name: member.name, maxMinutes });
     }
   });
 
   return participants;
 }
-const RELAX_PROFESSIONS = ['Безработный', 'Студент', 'Удалёнщик'];
-const WORK_PROFESSIONS = ['Гибридный работник', 'Уличный работник', 'Офисный работник'];
+// Работающие профессии (15 минут потолок)
+const WORKING_PROFESSIONS = [
+  'Гибридный работник',
+  'Уличный работник',
+  'Офисный работник',
+  'Удалёнщик',
+];
+// Неработающие профессии (20 минут потолок)
+const NON_WORKING_PROFESSIONS = ['Безработный', 'Студент'];
+
+// Проверяет, является ли профессия работающей
+function isWorkingProfession(profession?: string): boolean {
+  if (!profession) return false;
+  return WORKING_PROFESSIONS.includes(profession);
+}
+
 // Вычисляет максимальное время для чеклиста
 function calculateMaxMinutes(householdMembers: HouseholdMember[], userProfession?: string): number {
-  const baseMinutes = RELAX_PROFESSIONS.includes(userProfession || '') ? 20 : 15;
+  // Пользователь: работающие - 15 минут, неработающие - 20 минут
+  const baseMinutes = isWorkingProfession(userProfession) ? 15 : 20;
 
   const extraMinutes = householdMembers.reduce((sum, member) => {
     const age = parseInt(member.age, 10) || 0;
     if (age <= 10) return sum; // детям до 10 ничего не добавляем
-    if (RELAX_PROFESSIONS.includes(member.profession)) return sum + 20;
-    if (WORK_PROFESSIONS.includes(member.profession)) return sum + 10;
-    return sum;
+    // Работающие сожители добавляют 15 минут, неработающие - 20 минут
+    if (isWorkingProfession(member.profession)) return sum + 15;
+    return sum + 20;
   }, 0);
 
   return baseMinutes + extraMinutes;
@@ -454,10 +484,55 @@ export async function generateChecklist(
   // Правило 17: DAILY задачи в приоритете всех, ставим каждый день
   const dailyTasks = TASKS.filter((t) => t.type === TaskType.DAILY);
 
-  // Добавляем DAILY задачи (кроме 35, если нет детей младше 7)
+  // Обрабатываем задачу 35 (убрать детские игрушки) отдельно
+  const task35 = TASKS.find((t) => t.id === 35);
+  let task35Assigned = false;
+
+  if (task35) {
+    // Задача добавляется всегда, если есть дети до 10 лет включительно
+    const hasChildren = hasChildrenUpTo10(profile.householdMembers || []);
+
+    if (hasChildren) {
+      const children3To10 = getChildrenAged3To10(profile.householdMembers || []);
+      const taskMinutes = calculateTaskMinutes(task35, houseSize);
+      const formattedDescription = formatTaskDescription(task35.description, 'GENERAL', false);
+
+      // Если есть дети от 3 до 10 лет - назначаем задачу одному из них
+      if (children3To10.length > 0) {
+        // Выбираем случайного ребенка от 3 до 10 лет
+        const randomIndex = Math.floor(Math.random() * children3To10.length);
+        const assignedChild = children3To10[randomIndex];
+
+        allTasks.push({
+          id: `GENERAL-${task35.id}-${Date.now()}-${allTasks.length}`,
+          title: formattedDescription,
+          minutes: taskMinutes,
+          status: 'in_progress',
+          roomName: 'GENERAL',
+          assignedTo: assignedChild.id, // Назначаем ребенку
+        });
+      } else {
+        // Если все дети младше 3 лет - задача будет назначена взрослым при распределении
+        allTasks.push({
+          id: `GENERAL-${task35.id}-${Date.now()}-${allTasks.length}`,
+          title: formattedDescription,
+          minutes: taskMinutes,
+          status: 'in_progress',
+          roomName: 'GENERAL',
+          // assignedTo будет установлен при распределении среди взрослых
+        });
+      }
+
+      totalMinutes += taskMinutes;
+      usedTaskIdsToday.add(task35.id);
+      task35Assigned = true;
+    }
+  }
+
+  // Добавляем остальные DAILY задачи (кроме 35, она уже обработана)
   for (const dailyTask of dailyTasks) {
-    if (dailyTask.id === 35 && !hasChildren) {
-      continue; // Пропускаем задачу 35 если нет детей младше 7
+    if (dailyTask.id === 35) {
+      continue; // Пропускаем задачу 35, она уже обработана выше
     }
 
     const taskMinutes = calculateTaskMinutes(dailyTask, houseSize);
@@ -677,16 +752,27 @@ export async function generateChecklist(
   // Распределяем задачи между участниками уборки поровну по времени с учетом потолков
   const participants = getCleaningParticipants(profile.householdMembers || [], profile.profession);
 
-  // Если есть участники (больше одного), распределяем задачи по времени
-  if (participants.length > 1 && allTasks.length > 0) {
-    // Сортируем задачи по времени (от больших к меньшим) для лучшего распределения
-    const sortedTasks = [...allTasks].sort((a, b) => b.minutes - a.minutes);
+  // Отслеживаем суммарное время для каждого участника
+  const participantTime = new Map<string | null, number>();
+  participants.forEach((p) => {
+    participantTime.set(p.id, 0);
+  });
 
-    // Отслеживаем суммарное время для каждого участника
-    const participantTime = new Map<string | null, number>();
-    participants.forEach((p) => {
-      participantTime.set(p.id, 0);
-    });
+  // Сначала учитываем уже назначенные задачи (например, задача 35 для детей 3-6)
+  allTasks.forEach((task) => {
+    if (task.assignedTo !== undefined) {
+      const currentTime = participantTime.get(task.assignedTo) || 0;
+      participantTime.set(task.assignedTo, currentTime + task.minutes);
+    }
+  });
+
+  // Если есть участники (больше одного), распределяем не назначенные задачи по времени
+  if (participants.length > 1 && allTasks.length > 0) {
+    // Фильтруем задачи, которые еще не назначены
+    const unassignedTasks = allTasks.filter((task) => task.assignedTo === undefined);
+
+    // Сортируем задачи по времени (от больших к меньшим) для лучшего распределения
+    const sortedTasks = [...unassignedTasks].sort((a, b) => b.minutes - a.minutes);
 
     // Распределяем задачи: всегда даем задачу участнику с наименьшим текущим временем,
     // но учитываем потолок времени каждого участника
@@ -711,6 +797,7 @@ export async function generateChecklist(
       // Если не нашли участника с достаточным местом, берем того, у кого меньше всего времени
       // (даже если превысим потолок - лучше распределить равномерно)
       if (assignedParticipantId === null) {
+        minTime = Infinity;
         participants.forEach((participant) => {
           const currentTime = participantTime.get(participant.id) || 0;
           if (currentTime < minTime) {
@@ -720,16 +807,24 @@ export async function generateChecklist(
         });
       }
 
-      // Назначаем задачу этому участнику
+      // Назначаем задачу этому участнику (всегда должен быть найден, так как есть хотя бы пользователь)
       if (assignedParticipantId !== null) {
         task.assignedTo = assignedParticipantId;
-        participantTime.set(assignedParticipantId, minTime + task.minutes);
+        const finalTime = participantTime.get(assignedParticipantId) || 0;
+        participantTime.set(assignedParticipantId, finalTime + task.minutes);
+      } else {
+        // Fallback: если по какой-то причине не нашли участника, назначаем пользователю
+        task.assignedTo = null;
+        const userTime = participantTime.get(null) || 0;
+        participantTime.set(null, userTime + task.minutes);
       }
     });
   } else {
-    // Если участник один (только пользователь), все задачи ему
+    // Если участник один (только пользователь), все не назначенные задачи ему
     allTasks.forEach((task) => {
-      task.assignedTo = null; // null означает пользователя
+      if (task.assignedTo === undefined) {
+        task.assignedTo = null; // null означает пользователя
+      }
     });
   }
 

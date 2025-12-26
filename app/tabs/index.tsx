@@ -158,7 +158,7 @@ export default function HomeScreen() {
     });
   }
 
-  // Затем сожители
+  // Затем сожители (взрослые старше 10 лет)
   const householdMembers = profile?.householdMembers || [];
   householdMembers.forEach((member) => {
     const age = parseInt(member.age) || 0;
@@ -166,6 +166,18 @@ export default function HomeScreen() {
       groupedTasks.push({
         assignedTo: member.id,
         name: `Задачи домочадца ${member.name}`,
+        tasks: tasksByParticipant.get(member.id)!,
+      });
+    }
+  });
+
+  // Затем дети от 3 до 10 лет (если у них есть задачи)
+  householdMembers.forEach((member) => {
+    const age = parseInt(member.age) || 0;
+    if (age >= 3 && age <= 10 && tasksByParticipant.has(member.id)) {
+      groupedTasks.push({
+        assignedTo: member.id,
+        name: `Задачи ${member.name}`,
         tasks: tasksByParticipant.get(member.id)!,
       });
     }
