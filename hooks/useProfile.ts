@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { UserProfile } from '@/types/profile';
 import { storage } from '@/utils/storage';
+import { useEffect, useState } from 'react';
 
 export function useProfile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -27,16 +27,19 @@ export function useProfile() {
           updatedProfile = { ...updatedProfile, chubrikMaxLevel: 1 };
           needsSave = true;
         }
-        
+
         // Миграция: удаляем поле timezone, если оно есть
         if ('timezone' in updatedProfile) {
           const { timezone, ...profileWithoutTimezone } = updatedProfile as any;
           updatedProfile = profileWithoutTimezone;
           needsSave = true;
         }
-        
+
         // Миграция: преобразуем petsCount (string) в hasPets (boolean)
-        if ('petsCount' in updatedProfile && typeof (updatedProfile as any).petsCount === 'string') {
+        if (
+          'petsCount' in updatedProfile &&
+          typeof (updatedProfile as any).petsCount === 'string'
+        ) {
           const petsCount = (updatedProfile as any).petsCount;
           const { petsCount: _, ...profileWithoutPetsCount } = updatedProfile as any;
           updatedProfile = {
@@ -45,7 +48,7 @@ export function useProfile() {
           };
           needsSave = true;
         }
-        
+
         // Сохраняем обновленный профиль только если были изменения
         if (needsSave) {
           await storage.saveProfile(updatedProfile);
@@ -62,10 +65,17 @@ export function useProfile() {
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!profile) return;
-    
     try {
-      const updatedProfile = { ...profile, ...updates };
+      // ВАЖНО: Всегда читаем актуальный профиль из storage перед обновлением,
+      // чтобы не потерять данные (например, прогресс чубрика), которые могли быть обновлены в другом месте
+      const currentProfile = await storage.getProfile();
+      if (!currentProfile) {
+        console.warn('Cannot update profile: profile not found in storage');
+        return;
+      }
+
+      // Объединяем актуальный профиль с обновлениями
+      const updatedProfile = { ...currentProfile, ...updates };
       await storage.saveProfile(updatedProfile);
       setProfile(updatedProfile);
     } catch (error) {
@@ -81,4 +91,3 @@ export function useProfile() {
     updateProfile,
   };
 }
-
