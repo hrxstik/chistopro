@@ -366,13 +366,23 @@ function hasChildrenUnder7(householdMembers: HouseholdMember[]): boolean {
 function getHouseholdMembersCount(householdMembers: HouseholdMember[]): number {
   return householdMembers.length;
 }
-
+const RELAX_PROFESSIONS = ['Безработный', 'Студент', 'Удалёнщик'];
+const WORK_PROFESSIONS = ['Гибридный работник', 'Уличный работник', 'Офисный работник'];
 // Вычисляет максимальное время для чеклиста
-function calculateMaxMinutes(householdMembers: HouseholdMember[]): number {
-  const baseMinutes = 20;
-  const membersCount = getHouseholdMembersCount(householdMembers);
-  return baseMinutes + membersCount * 20;
+function calculateMaxMinutes(householdMembers: HouseholdMember[], userProfession?: string): number {
+  const baseMinutes = RELAX_PROFESSIONS.includes(userProfession || '') ? 20 : 15;
+
+  const extraMinutes = householdMembers.reduce((sum, member) => {
+    const age = parseInt(member.age, 10) || 0;
+    if (age <= 10) return sum; // детям до 10 ничего не добавляем
+    if (RELAX_PROFESSIONS.includes(member.profession)) return sum + 20;
+    if (WORK_PROFESSIONS.includes(member.profession)) return sum + 10;
+    return sum;
+  }, 0);
+
+  return baseMinutes + extraMinutes;
 }
+
 
 // Генерирует чеклист на основе комнат из профиля
 export async function generateChecklist(
@@ -393,7 +403,7 @@ export async function generateChecklist(
   const selectedRooms = rooms.filter((r) => r.checked);
 
   // Вычисляем максимальное время
-  const MAX_MINUTES = calculateMaxMinutes(profile.householdMembers || []);
+  const MAX_MINUTES = calculateMaxMinutes(profile.householdMembers || [], profile.profession);
   const houseSize = getHouseSizeType(profile.area || '0');
   const hasPets = profile.hasPets || false;
   const hasChildren = hasChildrenUnder7(profile.householdMembers || []);
