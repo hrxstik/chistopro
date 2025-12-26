@@ -6,6 +6,7 @@ export type ChecklistTask = {
   minutes: number;
   status: TaskStatus;
   roomName: string;
+  assignedTo?: string | null; // ID сожителя или null для пользователя
 };
 
 export type ChecklistStatus = 'in_progress' | 'done' | 'missed';
@@ -17,4 +18,3 @@ export type Checklist = {
   tasks: ChecklistTask[];
   createdAt: number; // timestamp
 };
-

@@ -129,14 +129,86 @@ export default function HomeScreen() {
 
   const tasks = currentChecklist?.tasks || [];
 
+  // Группируем задачи по участникам
+  type TaskGroup = {
+    assignedTo: string | null;
+    name: string;
+    tasks: typeof tasks;
+  };
+
+  const groupedTasks: TaskGroup[] = [];
+  const tasksByParticipant = new Map<string | null, typeof tasks>();
+
+  // Группируем задачи по assignedTo
+  tasks.forEach((task) => {
+    const key = task.assignedTo ?? null;
+    if (!tasksByParticipant.has(key)) {
+      tasksByParticipant.set(key, []);
+    }
+    tasksByParticipant.get(key)!.push(task);
+  });
+
+  // Создаем группы с именами участников
+  // Сначала пользователь (null)
+  if (tasksByParticipant.has(null)) {
+    groupedTasks.push({
+      assignedTo: null,
+      name: 'Ваши задачи',
+      tasks: tasksByParticipant.get(null)!,
+    });
+  }
+
+  // Затем сожители
+  const householdMembers = profile?.householdMembers || [];
+  householdMembers.forEach((member) => {
+    const age = parseInt(member.age) || 0;
+    if (age > 10 && tasksByParticipant.has(member.id)) {
+      groupedTasks.push({
+        assignedTo: member.id,
+        name: `Задачи домочадца ${member.name}`,
+        tasks: tasksByParticipant.get(member.id)!,
+      });
+    }
+  });
+
+  // Если нет группировки (старые чеклисты без assignedTo), показываем все задачи как "Ваши задачи"
+  if (groupedTasks.length === 0 && tasks.length > 0) {
+    groupedTasks.push({
+      assignedTo: null,
+      name: 'Ваши задачи',
+      tasks: tasks,
+    });
+  }
+
+  // Создаем плоский список элементов для отображения (заголовки + задачи)
+  type ListItem = { type: 'header'; name: string } | { type: 'task'; task: (typeof tasks)[0] };
+  const listItems: ListItem[] = [];
+
+  groupedTasks.forEach((group, groupIndex) => {
+    // Добавляем заголовок группы
+    listItems.push({ type: 'header', name: group.name });
+
+    // Добавляем задачи группы
+    group.tasks.forEach((task) => {
+      listItems.push({ type: 'task', task });
+    });
+
+    // Добавляем разделитель между группами (кроме последней)
+    if (groupIndex < groupedTasks.length - 1) {
+      listItems.push({ type: 'header', name: '---' });
+    }
+  });
+
   return (
     <View style={styles.container}>
       {/* верхняя голубая линия */}
       <AdBanner />
 
       <FlatList
-        data={tasks}
-        keyExtractor={(item) => item.id}
+        data={listItems}
+        keyExtractor={(item, index) =>
+          item.type === 'header' ? `header-${item.name}-${index}` : item.task.id
+        }
         ListHeaderComponent={
           <>
             {/* Реклама чуть ниже синей линии */}
@@ -191,18 +263,36 @@ export default function HomeScreen() {
             )}
           </>
         }
-        renderItem={({ item }) => (
-          <View style={styles.taskRow}>
-            <View style={styles.taskLeft}>
-              <Checkbox checked={item.status === 'done'} onToggle={() => toggleTask(item.id)} />
-              <Text style={[styles.taskTitle, item.status === 'done' && styles.taskTitleCompleted]}>
-                {item.title}
-              </Text>
-            </View>
+        renderItem={({ item }) => {
+          if (item.type === 'header') {
+            if (item.name === '---') {
+              // Разделитель
+              return <View style={styles.divider} />;
+            }
+            // Заголовок группы
+            return <Text style={styles.groupHeader}>{item.name}</Text>;
+          }
+          // Задача
+          return (
+            <View style={styles.taskRow}>
+              <View style={styles.taskLeft}>
+                <Checkbox
+                  checked={item.task.status === 'done'}
+                  onToggle={() => toggleTask(item.task.id)}
+                />
+                <Text
+                  style={[
+                    styles.taskTitle,
+                    item.task.status === 'done' && styles.taskTitleCompleted,
+                  ]}>
+                  {item.task.title}
+                </Text>
+              </View>
 
-            <TaskTimeInfo text={`${item.minutes} мин`} />
-          </View>
-        )}
+              <TaskTimeInfo text={`${item.task.minutes} мин`} />
+            </View>
+          );
+        }}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
@@ -348,5 +438,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
     marginBottom: 8,
+  },
+  groupHeader: {
+    fontSize: 16,
+    fontFamily: 'Nexa',
+    color: Colors.text,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.primary,
+    marginVertical: 12,
+    opacity: 0.3,
   },
 });

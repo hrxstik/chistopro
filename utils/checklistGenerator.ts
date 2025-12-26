@@ -366,6 +366,41 @@ function hasChildrenUnder7(householdMembers: HouseholdMember[]): boolean {
 function getHouseholdMembersCount(householdMembers: HouseholdMember[]): number {
   return householdMembers.length;
 }
+
+// Получает список участников уборки (пользователь + сожители старше 10 лет)
+// Возвращает массив объектов с id, name и maxMinutes (потолок времени)
+function getCleaningParticipants(
+  householdMembers: HouseholdMember[],
+  userProfession?: string,
+): Array<{ id: string | null; name: string; maxMinutes: number }> {
+  // Пользователь: RELAX_PROFESSIONS дают 20 минут, остальные - 15 минут
+  const userMaxMinutes = RELAX_PROFESSIONS.includes(userProfession || '') ? 20 : 15;
+
+  const participants: Array<{ id: string | null; name: string; maxMinutes: number }> = [
+    { id: null, name: 'Вы', maxMinutes: userMaxMinutes },
+  ];
+
+  // Добавляем сожителей старше 10 лет с их потолками времени
+  householdMembers.forEach((member) => {
+    const age = parseInt(member.age) || 0;
+    if (age > 10) {
+      // Для сожителей: RELAX_PROFESSIONS дают 20 минут, WORK_PROFESSIONS - 10 минут
+      let maxMinutes = 0;
+      if (RELAX_PROFESSIONS.includes(member.profession)) {
+        maxMinutes = 20;
+      } else if (WORK_PROFESSIONS.includes(member.profession)) {
+        maxMinutes = 10;
+      } else {
+        // Если профессия не указана или не в списке - используем минимальный потолок
+        maxMinutes = 10;
+      }
+
+      participants.push({ id: member.id, name: member.name, maxMinutes });
+    }
+  });
+
+  return participants;
+}
 const RELAX_PROFESSIONS = ['Безработный', 'Студент', 'Удалёнщик'];
 const WORK_PROFESSIONS = ['Гибридный работник', 'Уличный работник', 'Офисный работник'];
 // Вычисляет максимальное время для чеклиста
@@ -382,7 +417,6 @@ function calculateMaxMinutes(householdMembers: HouseholdMember[], userProfession
 
   return baseMinutes + extraMinutes;
 }
-
 
 // Генерирует чеклист на основе комнат из профиля
 export async function generateChecklist(
@@ -638,6 +672,65 @@ export async function generateChecklist(
     console.log(
       `Laundry cycle: generation ${laundryGeneration.generationCount}, step ${laundryGeneration.currentLaundryStep}, no laundry task`,
     );
+  }
+
+  // Распределяем задачи между участниками уборки поровну по времени с учетом потолков
+  const participants = getCleaningParticipants(profile.householdMembers || [], profile.profession);
+
+  // Если есть участники (больше одного), распределяем задачи по времени
+  if (participants.length > 1 && allTasks.length > 0) {
+    // Сортируем задачи по времени (от больших к меньшим) для лучшего распределения
+    const sortedTasks = [...allTasks].sort((a, b) => b.minutes - a.minutes);
+
+    // Отслеживаем суммарное время для каждого участника
+    const participantTime = new Map<string | null, number>();
+    participants.forEach((p) => {
+      participantTime.set(p.id, 0);
+    });
+
+    // Распределяем задачи: всегда даем задачу участнику с наименьшим текущим временем,
+    // но учитываем потолок времени каждого участника
+    sortedTasks.forEach((task) => {
+      // Находим участника с минимальным временем, у которого есть место для задачи
+      let minTime = Infinity;
+      let assignedParticipantId: string | null = null;
+
+      participants.forEach((participant) => {
+        const currentTime = participantTime.get(participant.id) || 0;
+        const maxMinutes = participant.maxMinutes;
+
+        // Проверяем, что задача поместится в потолок участника
+        if (currentTime + task.minutes <= maxMinutes) {
+          if (currentTime < minTime) {
+            minTime = currentTime;
+            assignedParticipantId = participant.id;
+          }
+        }
+      });
+
+      // Если не нашли участника с достаточным местом, берем того, у кого меньше всего времени
+      // (даже если превысим потолок - лучше распределить равномерно)
+      if (assignedParticipantId === null) {
+        participants.forEach((participant) => {
+          const currentTime = participantTime.get(participant.id) || 0;
+          if (currentTime < minTime) {
+            minTime = currentTime;
+            assignedParticipantId = participant.id;
+          }
+        });
+      }
+
+      // Назначаем задачу этому участнику
+      if (assignedParticipantId !== null) {
+        task.assignedTo = assignedParticipantId;
+        participantTime.set(assignedParticipantId, minTime + task.minutes);
+      }
+    });
+  } else {
+    // Если участник один (только пользователь), все задачи ему
+    allTasks.forEach((task) => {
+      task.assignedTo = null; // null означает пользователя
+    });
   }
 
   // Создаем чеклист с уникальным ID на основе timestamp и случайного числа
