@@ -177,7 +177,7 @@ export default function HomeScreen() {
     if (age >= 3 && age <= 10 && tasksByParticipant.has(member.id)) {
       groupedTasks.push({
         assignedTo: member.id,
-        name: `Задачи ${member.name}`,
+        name: `Задачи домочадца ${member.name}`,
         tasks: tasksByParticipant.get(member.id)!,
       });
     }
